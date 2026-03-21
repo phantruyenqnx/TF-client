@@ -1,0 +1,113 @@
+name: deploy
+
+# Controls when the workflow will run
+on:
+  push:
+    branches: [staging, production]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "14.x"
+
+jobs:
+  staging-deploy:
+    if: github.ref == 'refs/heads/staging'
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      API_HOST: ${{ secrets.API_HOST }}
+      API_VERSION: ${{ secrets.API_VERSION }}
+      AUTH0_AUDIENCE: ${{ secrets.AUTH0_AUDIENCE }}
+      AUTH0_CLIENT_DOMAIN: ${{ secrets.AUTH0_CLIENT_DOMAIN }}
+      AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+      AUTH0_LOGOUT_REDIRECT: ${{ secrets.AUTH0_LOGOUT_REDIRECT }}
+      AUTH0_REDIRECT: ${{ secrets.AUTH0_REDIRECT }}
+      AWS_GZ_LOGS_BUCKET: ${{ secrets.AWS_GZ_LOGS_BUCKET }}
+      CLOUDSIM_HOST: ${{ secrets.CLOUDSIM_HOST }}
+      CLOUDSIM_VERSION: ${{ secrets.CLOUDSIM_VERSION }}
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build:staging
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "us-east-1"
+
+      - name: Upload package to S3 bucket
+        run: aws s3 sync dist s3://${{ secrets.S3_BUCKET }}
+
+      - name: Invalidate Cloudfront
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths '/*'
+
+  production-deploy:
+    if: github.ref == 'refs/heads/production'
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      API_HOST: ${{ secrets.API_HOST }}
+      API_VERSION: ${{ secrets.API_VERSION }}
+      AUTH0_AUDIENCE: ${{ secrets.AUTH0_AUDIENCE }}
+      AUTH0_CLIENT_DOMAIN: ${{ secrets.AUTH0_CLIENT_DOMAIN }}
+      AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+      AUTH0_LOGOUT_REDIRECT: ${{ secrets.AUTH0_LOGOUT_REDIRECT }}
+      AUTH0_REDIRECT: ${{ secrets.AUTH0_REDIRECT }}
+      AWS_GZ_LOGS_BUCKET: ${{ secrets.AWS_GZ_LOGS_BUCKET }}
+      CLOUDSIM_HOST: ${{ secrets.CLOUDSIM_HOST }}
+      CLOUDSIM_VERSION: ${{ secrets.CLOUDSIM_VERSION }}
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build:prod
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "us-east-1"
+
+      - name: Upload package to S3 bucket
+        run: aws s3 sync dist s3://${{ secrets.S3_BUCKET }}
+
+      - name: Invalidate Cloudfront
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths '/*'

@@ -1,0 +1,230 @@
+<div class="wrapper">
+  @if (resolvingRoute) {
+    <mat-progress-bar
+      id="progress-bar"
+      mode="determinate"
+      color="accent"
+      [value]="progressBarValue"
+    ></mat-progress-bar>
+  }
+
+  <div class="main-container">
+    <mat-toolbar class="fx-layout-column app-header">
+      <!-- Top Row: Logo, Search, User Auth -->
+      <mat-toolbar-row
+        class="fx-layout-row fx-layout-align-space-between-center header-top-row"
+      >
+        <!-- Logo -->
+        <div class="header-logo">
+          <a routerLink="/dashboard" class="logo-link">
+            <img
+              src="assets/images/gazebo_icon_color.svg"
+              alt="Gazebo Logo"
+              class="brand-logo"
+            />
+            <span class="logo-text">Gazebo Fuel</span>
+          </a>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            #search
+            type="text"
+            class="search-input"
+            placeholder="Search models, worlds, and collections..."
+            (keyup.enter)="onSearch(search.value)"
+          />
+        </div>
+
+        <div class="header-right">
+          <!-- Documentation button -->
+          <a
+            mat-icon-button
+            routerLink="/information"
+            title="Documentation"
+            class="header-icon-button"
+          >
+            <mat-icon fontSet="material-symbols-outlined">school</mat-icon>
+          </a>
+
+          <!-- Add resource button -->
+          @if (deviceService.isDesktop()) {
+            <button
+              class="add-button header-icon-button"
+              mat-icon-button
+              [matMenuTriggerFor]="addAssetMenu"
+              title="Add Resource"
+            >
+              <mat-icon fontSet="material-symbols-outlined">add</mat-icon>
+            </button>
+          }
+
+          <mat-menu
+            #addAssetMenu="matMenu"
+            xPosition="before"
+            yPosition="below"
+            overlapTrigger="false"
+          >
+            <button
+              mat-menu-item
+              routerLink="/models/upload"
+              routerLinkActive="active"
+            >
+              Model
+            </button>
+
+            <button
+              mat-menu-item
+              routerLink="/worlds/upload"
+              routerLinkActive="active"
+            >
+              World
+            </button>
+          </mat-menu>
+          <!-- Login/logout and other user options -->
+          <button
+            mat-icon-button
+            [matMenuTriggerFor]="userMenu"
+            class="header-icon-button"
+            title="User Menu"
+          >
+            @if (!authService.isAuthenticated()) {
+              <mat-icon id="profile-icon" fontSet="material-symbols-outlined"
+                >person</mat-icon
+              >
+            } @else {
+              <img
+                class="profile-img"
+                [src]="authService.userProfile?.picture"
+              />
+            }
+          </button>
+        </div>
+
+        <mat-menu
+          #userMenu="matMenu"
+          xPosition="before"
+          yPosition="below"
+          overlapTrigger="false"
+        >
+          @if (!authService.isAuthenticated()) {
+            <button mat-menu-item (click)="authService.login()">Log in</button>
+          }
+
+          @if (
+            authService.isAuthenticated() &&
+            authService.userProfile?.orgs.length > 0
+          ) {
+            <button mat-menu-item [matMenuTriggerFor]="orgMenu">
+              Organizations
+            </button>
+          }
+
+          @if (authService.isAuthenticated()) {
+            <button
+              mat-menu-item
+              routerLink="/{{ authService.userProfile.username }}"
+              routerLinkActive="active"
+            >
+              Profile
+            </button>
+          }
+
+          @if (authService.isAuthenticated()) {
+            <button
+              mat-menu-item
+              routerLink="/settings"
+              routerLinkActive="active"
+            >
+              Settings
+            </button>
+          }
+
+          @if (authService.isAuthenticated()) {
+            <button mat-menu-item (click)="authService.logout()">
+              Log out
+            </button>
+          }
+        </mat-menu>
+
+        <mat-menu
+          #orgMenu="matMenu"
+          xPosition="before"
+          yPosition="below"
+          overlapTrigger="false"
+        >
+          @for (org of authService.userProfile?.orgs; track org) {
+            <button
+              mat-menu-item
+              routerLink="/{{ org }}"
+              routerLinkActive="active"
+            >
+              {{ org }}
+            </button>
+          }
+          <mat-divider></mat-divider>
+          <button
+            mat-menu-item
+            routerLink="/settings"
+            fragment="organizations"
+            routerLinkActive="active"
+          >
+            Manage Organizations
+          </button>
+        </mat-menu>
+      </mat-toolbar-row>
+
+      <!-- Bottom Row: Navigation Links -->
+      <mat-toolbar-row
+        class="fx-layout-row fx-layout-align-center-center header-bottom-row"
+      >
+        <nav class="header-nav">
+          <a
+            routerLink="/models"
+            [class.active]="isRouteActive('models')"
+            class="nav-link"
+          >
+            Models
+          </a>
+          <a
+            routerLink="/worlds"
+            [class.active]="isRouteActive('worlds')"
+            class="nav-link"
+          >
+            Worlds
+          </a>
+          <a
+            routerLink="/collections"
+            [class.active]="isRouteActive('collections')"
+            class="nav-link"
+          >
+            Collections
+          </a>
+          <a
+            routerLink="/visualization"
+            [class.active]="isRouteActive('visualization')"
+            class="nav-link"
+          >
+            Visualization
+          </a>
+          @if (authService.userProfile?.sysAdmin) {
+            <a
+              routerLink="/admin"
+              [class.active]="isRouteActive('admin')"
+              class="nav-link"
+            >
+              System Admin
+            </a>
+          }
+        </nav>
+      </mat-toolbar-row>
+    </mat-toolbar>
+
+    <div class="page-content">
+      <router-outlet (deactivate)="onDeactivate($event)"></router-outlet>
+      <div class="copyright">&copy; {{ currentYear }} Open Robotics</div>
+    </div>
+  </div>
+</div>

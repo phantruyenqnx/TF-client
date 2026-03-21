@@ -1,0 +1,85 @@
+<div class="fx-layout-column fx-layout-align-space-between-start">
+  <div class="button-row fx-layout-row fx-layout-align-left">
+    <div class="add-button-files">
+      <label for="browse-files">
+        <a mat-raised-button [disabled]="uploading">Add files</a>
+      </label>
+
+      <input
+        type="file"
+        id="browse-files"
+        class="input-file"
+        (change)="onFileInput($event)"
+      />
+    </div>
+
+    <div class="add-button-folder">
+      <label for="browse-dirs">
+        <a mat-raised-button [disabled]="uploading">Add folders</a>
+      </label>
+
+      <input
+        type="file"
+        id="browse-dirs"
+        class="input-file"
+        (change)="onFileInput($event)"
+        webkitdirectory
+        directory
+        multiple
+      />
+    </div>
+  </div>
+
+  <div
+    class="fx-layout-row fx-layout-align-center-center fx-fill fx-layout-column-xs"
+  >
+    <div
+      class="fx-flex dropzone-list"
+      gzDnd
+      (newValidFilesEmitter)="onValidFiles($event)"
+      (newInvalidFilesEmitter)="onInvalidFiles($event)"
+      [allowedExtensions]="allowedExtensions"
+    >
+      @if (!fileList || fileList.length == 0) {
+        <div
+          class="mat-typography dropzone-msg fx-layout-column fx-layout-align-center-center"
+          [innerHtml]="message"
+        ></div>
+      } @else {
+        <div class="fx-layout-column fx-layout-align-start-stretch">
+          @for (file of fileList; track file) {
+            <div class="file fx-layout-row fx-layout-align-space-between">
+              @if (file.fullPath) {
+                <span>{{ file.fullPath }}</span>
+              }
+              @if (!file.fullPath) {
+                <span>{{ file.name }}</span>
+              }
+              <i
+                class="material-icons"
+                button
+                type="button"
+                matSuffix
+                (click)="removeFile(file)"
+              >
+                delete
+              </i>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @if (hasGzWeb) {
+      <div class="viewer-wrapper fx-flex-50">
+        <gz-sdfviewer class="sdfviewer" [fileList]="fileList"> </gz-sdfviewer>
+      </div>
+    }
+  </div>
+
+  @if (uploading) {
+    <div class="fx-layout-row fx-layout-align-center-center fx-fill">
+      <div id="html-spinner"></div>
+    </div>
+  }
+</div>

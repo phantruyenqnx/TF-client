@@ -1,0 +1,88 @@
+<div class="content mat-typography">
+  <div class="fx-layout-column fx-layout-align-start-start gap-20">
+    <p>Connect to and visualize a running Gazebo simulation.</p>
+
+    <div class="fx-layout-align-start gap-20">
+      <div class="fx-layout-row fx-layout-align-start-start gap-20">
+        <mat-form-field>
+          <input matInput [(ngModel)]="wsUrl" placeholder="Websocket URL" />
+        </mat-form-field>
+
+        <mat-form-field>
+          <input
+            matInput
+            [(ngModel)]="authKey"
+            placeholder="Authorization Key"
+          />
+        </mat-form-field>
+
+        @if (connectionStatus === "disconnected") {
+          <button mat-raised-button (click)="connect()">Connect</button>
+        }
+
+        @if (connectionStatus !== "disconnected") {
+          <button mat-raised-button (click)="disconnect()">Disconnect</button>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fx-layout-row">
+  <div class="visualizer fx-fill">
+    <div class="outer" #fullScreen>
+      @if (following) {
+        <a
+          class="follow-button"
+          mat-icon-button
+          (click)="follow(null)"
+          title="Stop following"
+          >Stop following</a
+        >
+      }
+
+      @if (sceneMgr) {
+        <div class="controls">
+          <a mat-icon-button (click)="snapshot()" title="Take a snapshot"
+            ><mat-icon>camera_alt</mat-icon></a
+          >
+          <a mat-icon-button (click)="resetView()" title="Reset view"
+            ><mat-icon>home</mat-icon></a
+          >
+          <a mat-icon-button (click)="toggleFullscreen()" title="Full screen"
+            ><mat-icon>fullscreen</mat-icon></a
+          >
+        </div>
+      }
+
+      <div class="inner fx-layout-align-center-center">
+        <div class="fx-layout-row fx-layout-align-center-center">
+          <div id="gz-scene" (window:resize)="resize()"></div>
+          @if (models.length > 0) {
+            <div class="fx-layout-column gz3d-side-panel">
+              <h2>Entities</h2>
+              <mat-list class="entity-list">
+                @for (model of models; track model) {
+                  <mat-list-item [matMenuTriggerFor]="menu"
+                    >{{ model["name"] }}
+                    <mat-menu #menu="matMenu">
+                      <button mat-menu-item (click)="select(model)">
+                        Select
+                      </button>
+                      <button mat-menu-item (click)="moveTo(model)">
+                        Move to
+                      </button>
+                      <button mat-menu-item (click)="follow(model)">
+                        Follow
+                      </button>
+                    </mat-menu>
+                  </mat-list-item>
+                }
+              </mat-list>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

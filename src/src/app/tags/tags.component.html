@@ -1,0 +1,51 @@
+@if (edit) {
+  <div>
+    <mat-form-field class="fx-fill" hintLabel="Separate your tags by commas.">
+      <!-- This div was needed for our tag "jump" preventation <div>-->
+      <mat-placeholder>Tags</mat-placeholder>
+      <!-- Ditto: end div for the above comment </div>-->
+      <mat-chip-list class="chip-list-input" #chipList [disabled]="disabled">
+        @for (tag of tags; track tag; let i = $index) {
+          <mat-chip
+            [removable]="!disabled"
+            selectable="false"
+            [disabled]="disabled"
+            (removed)="removeTag(i)"
+          >
+            {{ tag }}
+            @if (!disabled) {
+              <mat-icon matChipRemove>cancel</mat-icon>
+            }
+          </mat-chip>
+        }
+        <input
+          matInput
+          [matChipInputFor]="chipList"
+          [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+          (matChipInputTokenEnd)="addTagChip($event)"
+          [disabled]="disabled"
+          (blur)="closeTagOnBlur($event)"
+        />
+      </mat-chip-list>
+    </mat-form-field>
+  </div>
+} @else {
+  <div class="fx-layout-row fx-fill gap-10">
+    <mat-icon class="margin-align" title="Tags">sell</mat-icon>
+    @if (tags && tags.length > 0) {
+      <div>
+        <mat-chip-list>
+          @for (tag of tags; track tag) {
+            <mat-chip>
+              {{ tag }}
+            </mat-chip>
+          }
+        </mat-chip-list>
+      </div>
+    } @else {
+      <div class="margin-align fx-layout-row fx-layout-align-start-center">
+        <span>No tags.</span>
+      </div>
+    }
+  </div>
+}

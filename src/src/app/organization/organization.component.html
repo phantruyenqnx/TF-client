@@ -1,0 +1,163 @@
+<div class="fx-layout-column page-content-inner">
+  <gz-page-title title="Organization: {{ organization.name }}"></gz-page-title>
+
+  <mat-tab-group
+    dynamicHeight
+    class="fx-fill"
+    (selectedIndexChange)="setActiveTab($event)"
+  >
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="fx-layout-row fx-layout-align-start-center">
+          <mat-icon svgIcon="gz-model"></mat-icon>
+          <span>Models ({{ paginatedModels?.totalCount }})</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-content">
+        <gz-fuel-resource-list
+          class="fx-flex"
+          resourceType="models"
+          [resources]="models"
+          [disabled]="activeTab !== 'models'"
+          [length]="paginatedModels?.totalCount"
+          [finished]="!paginatedModels?.hasNextPage()"
+          (pageChange)="loadModels($event)"
+        >
+        </gz-fuel-resource-list>
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="fx-layout-row fx-layout-align-start-center">
+          <mat-icon svgIcon="gz-world"></mat-icon>
+          <span>Worlds ({{ paginatedWorlds?.totalCount }})</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-content">
+        <gz-fuel-resource-list
+          class="fx-flex"
+          resourceType="worlds"
+          [resources]="worlds"
+          [disabled]="activeTab !== 'worlds'"
+          [length]="paginatedWorlds?.totalCount"
+          [finished]="!paginatedWorlds?.hasNextPage()"
+          (pageChange)="loadWorlds($event)"
+        >
+        </gz-fuel-resource-list>
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="fx-layout-row fx-layout-align-start-center">
+          <mat-icon>collections</mat-icon>
+          <span>Collections ({{ paginatedCollections?.totalCount }})</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-content">
+        <gz-fuel-resource-list
+          class="fx-flex"
+          resourceType="collections"
+          [resources]="collections"
+          [disabled]="activeTab !== 'collections'"
+          [length]="paginatedCollections?.totalCount"
+          [finished]="!paginatedCollections?.hasNextPage()"
+          (pageChange)="loadCollections($event)"
+        >
+        </gz-fuel-resource-list>
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="fx-layout-row fx-layout-align-start-center">
+          <mat-icon>group</mat-icon>
+          <span>Users ({{ users?.length }})</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-content">
+        @if (authService.hasWriteAccess(organization.name)) {
+          <form class="fx-layout-align-center" (ngSubmit)="addUser()">
+            <div
+              class="fx-fill fx-flex fx-layout-row fx-layout-align-center fx-layout-row wrap-lt-md gap-1em fx-flex-gt-xs-60 fx-flex-lt-sm-80 fx-layout-align-lt-md-space-between fx-layout-gap-lt-md-0"
+            >
+              <mat-form-field class="fx-fill fx-flex">
+                <input
+                  matInput
+                  placeholder="Add username"
+                  [formControl]="usernameInputForm"
+                  required
+                />
+                @if (usernameInputForm.hasError("required")) {
+                  <mat-error> Please enter a username </mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field>
+                <mat-select
+                  placeholder="Role"
+                  [formControl]="roleDropdownForm"
+                  required
+                >
+                  @for (role of roles; track role) {
+                    <mat-option [value]="role">
+                      {{ role }}
+                    </mat-option>
+                  }
+                </mat-select>
+                @if (roleDropdownForm.hasError("required")) {
+                  <mat-error> Please select a role </mat-error>
+                }
+              </mat-form-field>
+              <button
+                fxFlexAlign="start"
+                mat-raised-button
+                color="primary"
+                type="submit"
+              >
+                Add User
+              </button>
+            </div>
+          </form>
+        }
+
+        <div class="fx-fill fx-layout-row fx-layout-align-center">
+          <mat-list class="fx-flex fx-flex-gt-xs-60 fx-flex-lt-sm-80">
+            @for (user of users; track user) {
+              <mat-list-item class="list-divider">
+                <div
+                  class="fx-layout-row fx-layout-align-start-baseline gap-10"
+                  matLine
+                >
+                  <a routerLink="/{{ user.username }}">{{ user.username }}</a>
+                  <mat-chip-list>
+                    @if (user.orgRoles) {
+                      <mat-chip color="primary" selected>{{
+                        user.orgRoles[organization.name]
+                      }}</mat-chip>
+                    }
+                  </mat-chip-list>
+                </div>
+                @if (canDisplayRemoveButton(user)) {
+                  <button
+                    mat-button
+                    color="primary"
+                    (click)="removeUser(user)"
+                    [disabled]="disableRemoveButton(user)"
+                    [title]="getRemoveButtonTooltip(user)"
+                  >
+                    {{ getRemoveButtonLabel(user) }}
+                  </button>
+                }
+              </mat-list-item>
+            }
+          </mat-list>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

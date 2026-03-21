@@ -1,0 +1,38 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <div class="title-container">
+      <mat-card-title [title]="resource.name">
+        <a routerLink="/{{ resource.owner }}/{{ type }}/{{ resource.name }}">
+          {{ resource.name }}
+        </a>
+      </mat-card-title>
+      <mat-card-subtitle>
+        <a routerLink="/{{ resource.owner }}">
+          {{ resource.owner }}
+        </a>
+      </mat-card-subtitle>
+    </div>
+  </mat-card-header>
+
+  <div class="thumbnail-container">
+    <a routerLink="/{{ resource.owner }}/{{ type }}/{{ resource.name }}">
+      @if (resource.hasThumbnail()) {
+        @if (resource.getThumbnail().url | gzAuthHeader | async; as result) {
+          <img [src]="result" [alt]="resource.name" class="thumbnail" />
+        }
+      } @else {
+        <div class="thumbnail empty">
+          <h3>No thumbnail available</h3>
+        </div>
+      }
+    </a>
+  </div>
+
+  <mat-card-actions align="end">
+    @if (removable) {
+      <button mat-icon-button>
+        <mat-icon (click)="onRemoveClicked()">delete</mat-icon>
+      </button>
+    }
+  </mat-card-actions>
+</mat-card>

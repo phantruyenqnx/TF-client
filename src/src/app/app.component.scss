@@ -1,0 +1,213 @@
+// Local variables.
+$header-height-top: 64px;
+$header-height-bottom: 48px;
+$total-header-height: calc(#{$header-height-top} + #{$header-height-bottom});
+
+// The main wrapper for the full application
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f6f7f7; // Slightly off-white background requested
+}
+
+.main-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+}
+
+// ─── Header Styling ──────────────────────────────────────────────────
+.app-header {
+  background-color: #fff;
+  color: #333;
+  padding: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 3000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  .mat-toolbar-row {
+    padding: 0 24px;
+  }
+}
+
+.header-top-row {
+  height: $header-height-top;
+}
+
+.header-bottom-row {
+  height: $header-height-bottom;
+  background-color: #fff;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  flex: 1;
+
+  .logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .brand-logo {
+    height: 36px;
+    display: block;
+    margin-right: 12px;
+  }
+
+  .logo-text {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.toolbar-space {
+  display: none;
+}
+
+// ─── Search Bar ──────────────────────────────────────────────────────
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 4px 16px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  max-width: 600px;
+  flex: 1;
+  height: 40px;
+  border: 1px solid transparent;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+
+  &:focus-within {
+    background: #fff;
+    border-color: #0277bd;
+    box-shadow: 0 0 0 2px rgba(2, 119, 189, 0.1);
+  }
+}
+
+.search-icon {
+  color: #757575;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  padding: 8px 0;
+  background: transparent;
+  color: #333;
+  min-width: 0;
+
+  &::placeholder {
+    color: #9e9e9e;
+  }
+}
+
+// ─── Navigation Links (Bottom Row) ───────────────────────────────────
+.header-nav {
+  display: flex;
+  gap: 32px; // Increased gap for better spacing
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  max-width: 800px; // Slightly wider than search bar to allow links to breathe but keep them centered
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  color: #555;
+  font-weight: 500;
+  font-size: 0.95rem;
+  text-decoration: none;
+  padding: 0 12px;
+  height: 100%;
+  border-bottom: 3px solid transparent;
+  transition:
+    color 0.2s ease,
+    border-bottom-color 0.2s ease;
+
+  &:hover {
+    color: #0277bd;
+  }
+
+  &.active {
+    color: #0277bd;
+    border-bottom-color: #0277bd;
+  }
+}
+
+// ─── General UI Elements ─────────────────────────────────────────────
+.app-header .header-icon-button {
+  color: #555;
+  margin-left: 8px;
+
+  &:hover {
+    color: #0277bd;
+  }
+}
+
+#profile-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+  color: #555;
+}
+
+.profile-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+}
+
+#progress-bar {
+  height: 4px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 4000; // Above header
+}
+
+// ─── Page Content Area ───────────────────────────────────────────────
+.page-content {
+  flex: 1;
+  margin-top: $total-header-height;
+  display: flex;
+  flex-direction: column;
+}
+
+.copyright {
+  text-align: center;
+  padding: 24px;
+  color: #9e9e9e;
+  font-size: 0.85rem;
+  margin-top: auto; // Push to bottom if content is short
+}

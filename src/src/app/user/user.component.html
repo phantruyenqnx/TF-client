@@ -1,0 +1,114 @@
+<div class="fx-layout-column page-content-inner">
+  <gz-page-title title="User: {{ user.username }}"></gz-page-title>
+
+  <mat-tab-group
+    dynamicHeight
+    class="fx-fill"
+    (selectedIndexChange)="setActiveTab($event)"
+  >
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="fx-layout-row fx-layout-align-start-center">
+          <mat-icon svgIcon="gz-model"></mat-icon>
+          <span>Models Created ({{ paginatedModels?.totalCount }})</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-content">
+        <gz-fuel-resource-list
+          [resources]="models"
+          resourceType="models"
+          [disabled]="activeTab !== 'models'"
+          [finished]="!paginatedModels?.hasNextPage()"
+          (onLoadMore)="loadNextModelsPage()"
+          class="fx-flex"
+        >
+        </gz-fuel-resource-list>
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="fx-layout-row fx-layout-align-start-center">
+          <mat-icon svgIcon="gz-model"></mat-icon>
+          <span>Models Liked ({{ paginatedLikedModels?.totalCount }})</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-content">
+        <gz-fuel-resource-list
+          [resources]="modelsLiked"
+          resourceType="models"
+          [disabled]="activeTab !== 'modelsLiked'"
+          [finished]="!paginatedLikedModels?.hasNextPage()"
+          (onLoadMore)="loadNextLikedModelsPage()"
+          class="fx-flex"
+        >
+        </gz-fuel-resource-list>
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="fx-layout-row fx-layout-align-start-center">
+          <mat-icon svgIcon="gz-world"></mat-icon>
+          <span>Worlds Created ({{ paginatedWorlds?.totalCount }})</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-content">
+        <gz-fuel-resource-list
+          [resources]="worlds"
+          resourceType="worlds"
+          [disabled]="activeTab !== 'worlds'"
+          [finished]="!paginatedWorlds?.hasNextPage()"
+          (onLoadMore)="loadNextWorldsPage()"
+          class="fx-flex"
+        >
+        </gz-fuel-resource-list>
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="fx-layout-row fx-layout-align-start-center">
+          <mat-icon svgIcon="gz-world"></mat-icon>
+          <span>Worlds Liked ({{ paginatedLikedWorlds?.totalCount }})</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-content">
+        <gz-fuel-resource-list
+          [resources]="worldsLiked"
+          resourceType="worlds"
+          [disabled]="activeTab !== 'worldsLiked'"
+          [finished]="!paginatedLikedWorlds?.hasNextPage()"
+          (onLoadMore)="loadNextLikedWorldsPage()"
+          class="fx-flex"
+        >
+        </gz-fuel-resource-list>
+      </div>
+    </mat-tab>
+
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="fx-layout-row fx-layout-align-start-center">
+          <mat-icon>collections</mat-icon>
+          <span>Collections ({{ paginatedCollections?.totalCount }})</span>
+        </div>
+      </ng-template>
+
+      <div class="tab-content">
+        <gz-fuel-resource-list
+          [resources]="collections"
+          resourceType="collections"
+          [disabled]="activeTab !== 'collections'"
+          [finished]="!paginatedCollections?.hasNextPage()"
+          (onLoadMore)="loadNextCollectionsPage()"
+          class="fx-flex"
+        >
+        </gz-fuel-resource-list>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

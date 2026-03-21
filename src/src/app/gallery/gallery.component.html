@@ -1,0 +1,27 @@
+@if (images?.length > 0) {
+  <div class="gallery-container">
+    <div class="main-image">
+      @if (images.length > 1) {
+        <button class="nav-button prev" (click)="prev()">&#10094;</button>
+      }
+      <img [src]="images[currentIndex]" />
+      @if (images.length > 1) {
+        <button class="nav-button next" (click)="next()">&#10095;</button>
+      }
+    </div>
+  </div>
+}
+
+@if (images?.length > 1) {
+  <div class="thumbs-container">
+    @for (img of images; track img; let i = $index) {
+      <div
+        class="thumb"
+        [class.active]="i === currentIndex"
+        (click)="selectImage(i)"
+      >
+        <img [src]="img" />
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,33 @@
+.section {
+  padding: 40px 0;
+}
+
+.section-title {
+  color: rgb(110, 110, 110);
+  font-weight: 300;
+  font-size: 1.8em !important;
+}
+
+.section-title h2 {
+  margin: 10px 0 !important;
+}
+
+.section p a {
+  color: #0288d1;
+}
+
+.card {
+  min-width: 8em;
+  max-width: 12em;
+  width: 25%;
+}
+
+.more-button {
+  margin-top: 16px;
+}
+
+.fx-flex-90 {
+  flex: 1 1 90%;
+  max-width: 90%;
+  box-sizing: border-box;
+}

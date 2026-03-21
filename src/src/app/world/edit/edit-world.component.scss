@@ -1,0 +1,27 @@
+.content {
+  width: 60%;
+  margin: auto;
+  padding-bottom: 2em;
+}
+
+gz-page-title {
+  padding-left: 20px;
+}
+
+h2 {
+  padding-top: 2em;
+}
+
+.save-buttons {
+  padding-top: 20px;
+}
+
+.danger {
+  color: #f44336;
+}
+
+mat-radio-group {
+  mat-radio-button:not(:first-child) {
+    padding-left: 10px;
+  }
+}

@@ -1,0 +1,13 @@
+import { Component } from "@angular/core";
+
+@Component({
+  selector: "gz-admin",
+  templateUrl: "admin.component.html",
+  standalone: false,
+})
+
+/**
+ * Admin Component is the landing page for system admins.
+ * From here they can navigate to other sections.
+ */
+export class AdminComponent {}
