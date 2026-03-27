@@ -1,0 +1,9 @@
+{
+  "extends": "@tf/tsconfig/base",
+  "include": ["./**/*"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist",
+    "lib": ["DOM", "es2022"]
+  }
+}

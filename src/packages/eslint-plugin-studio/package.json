@@ -1,0 +1,23 @@
+{
+  "name": "@tf/eslint-plugin-studio",
+  "license": "MPL-2.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tf-platform/tf-client.git"
+  },
+  "author": {
+    "name": "TF Technologies",
+    "email": "support@tf-platform.dev"
+  },
+  "homepage": "https://tf-platform.dev/",
+  "main": "./index.js",
+  "files": [
+    "src"
+  ],
+  "devDependencies": {
+    "@tf/tsconfig": "2.0.0",
+    "@typescript-eslint/rule-tester": "6.10.0",
+    "@typescript-eslint/utils": "6.10.0"
+  }
+}

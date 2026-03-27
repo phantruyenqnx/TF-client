@@ -1,0 +1,27 @@
+{
+  "name": "@tf/comlink-transfer-handlers",
+  "license": "MPL-2.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tf-platform/tf-client.git"
+  },
+  "author": {
+    "name": "TF Technologies",
+    "email": "support@tf-platform.dev"
+  },
+  "homepage": "https://tf-platform.dev/",
+  "main": "./src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "prepack": "tsc -b"
+  },
+  "devDependencies": {
+    "@tf/tsconfig": "2.0.0",
+    "comlink": "github:foxglove/comlink#9181fa505671b35b1e66e0a8361a6fc1bdd03307",
+    "typescript": "5.3.3"
+  }
+}

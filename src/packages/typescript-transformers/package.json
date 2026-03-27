@@ -1,0 +1,28 @@
+{
+  "name": "@tf/typescript-transformers",
+  "license": "MPL-2.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tf-platform/tf-client.git"
+  },
+  "author": {
+    "name": "TF Technologies",
+    "email": "support@tf-platform.dev"
+  },
+  "homepage": "https://tf-platform.dev/",
+  "main": "./src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "prepack": "tsc -b"
+  },
+  "dependencies": {
+    "typescript": "5.3.3"
+  },
+  "devDependencies": {
+    "@tf/tsconfig": "2.0.0"
+  }
+}

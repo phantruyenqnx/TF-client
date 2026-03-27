@@ -1,0 +1,46 @@
+{
+  "name": "@tf/mcap-support",
+  "description": "Common schema and message parsing logic for use with MCAP and related protocols",
+  "license": "MPL-2.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tf-platform/tf-client.git"
+  },
+  "author": {
+    "name": "TF Technologies",
+    "email": "support@tf-platform.dev"
+  },
+  "homepage": "https://tf-platform.dev/",
+  "main": "./src/index.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "prepack": "tsc -b"
+  },
+  "devDependencies": {
+    "@tf/tsconfig": "2.0.0",
+    "@types/protobufjs": "workspace:*",
+    "typescript": "5.3.3"
+  },
+  "dependencies": {
+    "@mcap/core": "2.0.2",
+    "@protobufjs/base64": "1.1.2",
+    "@tf/message-definition": "0.3.1",
+    "@tf/omgidl-parser": "1.0.3",
+    "@tf/omgidl-serialization": "1.0.3",
+    "@tf/ros2idl-parser": "0.3.2",
+    "@tf/rosmsg": "4.2.2",
+    "@tf/rosmsg-serialization": "2.0.2",
+    "@tf/rosmsg2-serialization": "2.0.3",
+    "@tf/schemas": "1.6.2",
+    "@tf/wasm-bz2": "0.1.1",
+    "@tf/wasm-lz4": "1.0.2",
+    "@tf/wasm-zstd": "1.0.1",
+    "flatbuffers": "23.5.26",
+    "flatbuffers_reflection": "0.0.7",
+    "protobufjs": "patch:protobufjs@7.2.4#../../patches/protobufjs.patch"
+  }
+}

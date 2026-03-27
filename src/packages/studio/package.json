@@ -1,0 +1,25 @@
+{
+  "name": "@tf/studio",
+  "version": "1.86.0-dev",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tf-platform/tf-client/tree/main/packages/studio"
+  },
+  "author": {
+    "name": "TF Technologies",
+    "email": "support@tf-platform.dev"
+  },
+  "homepage": "https://tf-platform.dev/",
+  "main": "./src/index.ts",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "prepack": "tsc -b tsconfig.json"
+  },
+  "devDependencies": {
+    "@tf/tsconfig": "2.0.0",
+    "typescript": "5.3.3"
+  }
+}

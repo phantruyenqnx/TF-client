@@ -1,9 +1,7 @@
-node_modules
-dist
-.git
-.gitignore
-.angular
-.husky
-.vscode
-.idea
-*.md
+*.log
+*.tsbuildinfo
+.DS_Store
+.webpack/
+dist/
+node_modules/
+Dockerfile

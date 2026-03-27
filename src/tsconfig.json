@@ -1,18 +1,19 @@
-/* To learn more about this file see: https://angular.io/config/tsconfig. */
+// Root tsconfig.json
+// Do not "extend" from this file, use @tf/tsconfig/base instead.
+// Do not "include" files here if they are already included by another tsconfig.json.
 {
-  "compileOnSave": false,
+  "extends": "@tf/tsconfig/base",
+  "include": [
+    "./*.ts",
+    "./*.js",
+    "./**/jest.config.ts",
+    "./ci/**/*.ts",
+    "./resources/notarize.ts",
+    "./package.json"
+  ],
   "compilerOptions": {
-    "baseUrl": "./",
-    "outDir": "./dist/out-tsc",
-    "sourceMap": true,
-    "declaration": false,
-    "downlevelIteration": true,
-    "experimentalDecorators": true,
-    "moduleResolution": "bundler",
-    "importHelpers": true,
-    "target": "ES2022",
-    "module": "es2020",
-    "typeRoots": ["node_modules/@types"],
-    "useDefineForClassFields": false
+    "jsx": "react-jsx",
+    "module": "commonjs",
+    "noEmit": true
   }
 }
