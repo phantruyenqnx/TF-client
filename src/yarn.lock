@@ -5678,16 +5678,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tf/ws-protocol@npm:@foxglove/ws-protocol@0.7.2":
-  version: 0.7.2
-  resolution: "@foxglove/ws-protocol@npm:0.7.2"
+"@tf/ws-protocol@workspace:*, @tf/ws-protocol@workspace:packages/ws-protocol":
+  version: 0.0.0-use.local
+  resolution: "@tf/ws-protocol@workspace:packages/ws-protocol"
   dependencies:
+    "@tf/tsconfig": 2.0.0
+    "@types/debug": ^4.1.9
     debug: ^4
     eventemitter3: ^5.0.1
     tslib: ^2.6.2
-  checksum: f6bfb467db8eec1290689364b9f5a2542a4248b41a214d88ee1ca1d56d160e178fa2eedd7211447d2c29e592ea2986643ad06f51283c4873848d28cb166c2bd9
-  languageName: node
-  linkType: hard
+    typescript: 5.3.3
+  languageName: unknown
+  linkType: soft
 
 "@tootallnate/once@npm:1":
   version: 1.1.2
@@ -5884,6 +5886,15 @@ __metadata:
   dependencies:
     "@types/ms": "*"
   checksum: 0a7b89d8ed72526858f0b61c6fd81f477853e8c4415bb97f48b1b5545248d2ae389931680b94b393b993a7cfe893537a200647d93defe6d87159b96812305adc
+  languageName: node
+  linkType: hard
+
+"@types/debug@npm:^4.1.9":
+  version: 4.1.13
+  resolution: "@types/debug@npm:4.1.13"
+  dependencies:
+    "@types/ms": "*"
+  checksum: 5091d4ebda85236e6f4a6ecea552860e521e11d1d388d3f6255b40726f5a4a7cf1baa0d09f60853838e4cac6c12a13b14114d5f422ccecaee4d1d07dab349900
   languageName: node
   linkType: hard
 

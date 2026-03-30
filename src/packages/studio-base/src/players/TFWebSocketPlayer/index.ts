@@ -37,7 +37,7 @@ import {
   Channel,
   ChannelId,
   ClientChannel,
-  FoxgloveClient,
+  TFClient,
   ServerCapability,
   SubscriptionId,
   Service,
@@ -97,7 +97,7 @@ export default class TFWebSocketPlayer implements Player {
 
   #url: string; // WebSocket URL.
   #name: string;
-  #client?: FoxgloveClient; // The client when we're connected.
+  #client?: TFClient; // The client when we're connected.
   #id: string = uuidv4(); // Unique ID for this player session.
   #serverCapabilities: string[] = [];
   #playerCapabilities: (typeof PlayerCapabilities)[keyof typeof PlayerCapabilities][] = [];
@@ -192,11 +192,11 @@ export default class TFWebSocketPlayer implements Player {
       this.#client?.close();
     }, 10000);
 
-    this.#client = new FoxgloveClient({
+    this.#client = new TFClient({
       ws:
         typeof Worker !== "undefined"
-          ? new WorkerSocketAdapter(this.#url, [FoxgloveClient.SUPPORTED_SUBPROTOCOL])
-          : new WebSocket(this.#url, [FoxgloveClient.SUPPORTED_SUBPROTOCOL]),
+          ? new WorkerSocketAdapter(this.#url, [TFClient.SUPPORTED_SUBPROTOCOL])
+          : new WebSocket(this.#url, [TFClient.SUPPORTED_SUBPROTOCOL]),
     });
 
     this.#client.on("open", () => {
@@ -241,7 +241,7 @@ export default class TFWebSocketPlayer implements Player {
           message: "Insecure WebSocket connection",
           tip: `Check that the WebSocket server at ${
             this.#url
-          } is reachable and supports protocol version ${FoxgloveClient.SUPPORTED_SUBPROTOCOL}.`,
+          } is reachable and supports protocol version ${TFClient.SUPPORTED_SUBPROTOCOL}.`,
         });
         this.#emitState();
       }
@@ -273,7 +273,7 @@ export default class TFWebSocketPlayer implements Player {
         message: "Connection failed",
         tip: `Check that the WebSocket server at ${
           this.#url
-        } is reachable and supports protocol version ${FoxgloveClient.SUPPORTED_SUBPROTOCOL}.`,
+        } is reachable and supports protocol version ${TFClient.SUPPORTED_SUBPROTOCOL}.`,
       });
 
       this.#emitState();

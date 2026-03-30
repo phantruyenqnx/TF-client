@@ -1,0 +1,40 @@
+{
+  "name": "@tf/ws-protocol",
+  "version": "0.7.2",
+  "license": "MIT",
+  "private": true,
+  "description": "TF WebSocket protocol",
+  "keywords": [
+    "tf",
+    "websocket",
+    "robotics",
+    "ros",
+    "ros2"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tf-platform/tf-client.git"
+  },
+  "author": {
+    "name": "TF Technologies",
+    "email": "support@tf-platform.dev"
+  },
+  "homepage": "https://tf-platform.dev/",
+  "main": "./src/index.ts",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "prepack": "tsc -b"
+  },
+  "dependencies": {
+    "debug": "^4",
+    "eventemitter3": "^5.0.1",
+    "tslib": "^2.6.2"
+  },
+  "devDependencies": {
+    "@tf/tsconfig": "2.0.0",
+    "@types/debug": "^4.1.9",
+    "typescript": "5.3.3"
+  }
+}

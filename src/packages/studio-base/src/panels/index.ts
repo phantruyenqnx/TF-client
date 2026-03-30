@@ -7,6 +7,7 @@ import { PanelInfo } from "@tf/studio-base/context/PanelCatalogContext";
 import { TAB_PANEL_TYPE } from "@tf/studio-base/util/globalConstants";
 
 import dataSourceInfoThumbnail from "./DataSourceInfo/thumbnail.png";
+import gcsThumbnail from "./Map/thumbnail.png";
 import gazeboThumbnail from "./ThreeDeeRender/thumbnail.png";
 import gaugeThumbnail from "./Gauge/thumbnail.png";
 import imageThumbnail from "./Image/thumbnail.png";
@@ -28,6 +29,13 @@ import diagnosticStatusThumbnail from "./diagnostics/thumbnails/diagnostic-statu
 import diagnosticSummaryThumbnail from "./diagnostics/thumbnails/diagnostic-summary.png";
 
 export const getBuiltin: (t: TFunction<"panels">) => PanelInfo[] = (t) => [
+  {
+    title: t("gcs"),
+    type: "GCS",
+    description: t("gcsDescription"),
+    thumbnail: gcsThumbnail,
+    module: async () => await import("./GCS"),
+  },
   {
     title: t("3D"),
     type: "3D",

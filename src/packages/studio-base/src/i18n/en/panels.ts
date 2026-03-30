@@ -49,4 +49,6 @@ export const panels = {
     "Write custom data transformations in TypeScript. Previously known as Node Playground.",
   variableSlider: "Variable Slider",
   variableSliderDescription: "Update numerical variable values for a layout.",
+  gcs: "GCS",
+  gcsDescription: "Ground Control Station — map, telemetry, flight mode, and status for PX4 drones.",
 };

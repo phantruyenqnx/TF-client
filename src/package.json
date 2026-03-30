@@ -71,7 +71,7 @@
     "@tf/velodyne-cloud": "npm:@foxglove/velodyne-cloud@1.0.1",
     "@tf/wasm-bz2": "npm:@foxglove/wasm-bz2@0.1.1",
     "@tf/wasm-lz4": "npm:@foxglove/wasm-lz4@1.0.2",
-    "@tf/ws-protocol": "npm:@foxglove/ws-protocol@0.7.2",
+    "@tf/ws-protocol": "workspace:*",
     "@tf/omgidl-parser": "npm:@foxglove/omgidl-parser@1.0.3",
     "@tf/omgidl-serialization": "npm:@foxglove/omgidl-serialization@1.0.3",
     "@tf/ros2idl-parser": "npm:@foxglove/ros2idl-parser@0.3.2",
