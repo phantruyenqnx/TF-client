@@ -1,4 +1,0 @@
-# robotstxt.org
-
-User-agent: *
-Sitemap: https://app.gazebosim.org/sitemap.xml

@@ -862,6 +862,37 @@ export class SDFParser {
             },
             [meshFile]);
         }
+        else if (ext === '.stl') {
+          that.scene.loadMeshFromString(modelUri, submesh, centerSubmesh,
+            function(stl: THREE.Object3D): void {
+              if (!stl) {
+                console.error('Failed to load STL mesh.');
+                return;
+              }
+
+              if (material) {
+                let allChildren: THREE.Object3D[] = [];
+                getDescendants(stl, allChildren);
+                for (var c = 0; c < allChildren.length; ++c) {
+                  if (allChildren[c] instanceof THREE.Mesh) {
+                    that.scene.setMaterial(allChildren[c] as THREE.Mesh,
+                                           material);
+                    break;
+                  }
+                }
+              }
+              parent.add(stl);
+              loadGeom(parent);
+            },
+            // onError callback
+            function(error: any): void {
+              console.error(error);
+            },
+            [meshFile]);
+        }
+        else {
+          console.error('Unsupported mesh file format [' + ext + ']');
+        }
       } else {
         if (this.customUrls.length !== 0) {
           for (var k = 0; k < this.customUrls.length; k++) {

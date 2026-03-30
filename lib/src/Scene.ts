@@ -1959,6 +1959,14 @@ export class Scene {
       }
       this.loadOBJ(uri, submesh, centerSubmesh, onLoad, onError, files);
     }
+    else if (uriFile.substr(-4).toLowerCase() === '.stl')
+    {
+      if (files.length < 1 || !files[0]) {
+        console.error('Missing STL file');
+        return;
+      }
+      this.loadSTL(uri, submesh, centerSubmesh, onLoad, onError, files[0]);
+    }
   }
 
   /**
@@ -2202,27 +2210,58 @@ export class Scene {
    * @param {} submesh
    * @param {} centerSubmesh
    * @param {function} onLoad
+   * @param {function} onError
+   * @param {string|ArrayBuffer} filedata - optional - the mesh file as binary data or string to be parsed
    */
   public loadSTL(uri: string, submesh: string, centerSubmesh: boolean,
-                 onLoad: any, onError: any): void
+                 onLoad: any, onError: any, filedata?: string | ArrayBuffer): void
   {
     var mesh = null;
     var that = this;
+    
+    function meshReady(geometry: THREE.BufferGeometry): void {
+      mesh = new THREE.Mesh(geometry);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+
+      that.meshes.set(uri, mesh);
+      mesh = mesh.clone();
+      mesh.name = uri;
+      if (submesh && that.useSubMesh(mesh, submesh, centerSubmesh)) {
+        onLoad(mesh);
+      } else if (!submesh) {
+        onLoad(mesh);
+      }
+    }
+    
+    // If filedata is provided, parse it directly
+    if (filedata) {
+      try {
+        // STLLoader.parse expects ArrayBuffer
+        let buffer: ArrayBuffer;
+        if (typeof filedata === 'string') {
+          // Convert string to ArrayBuffer
+          const encoder = new TextEncoder();
+          buffer = encoder.encode(filedata).buffer;
+        } else {
+          buffer = filedata;
+        }
+        const geometry = this.stlLoader.parse(buffer);
+        meshReady(geometry);
+      } catch (error) {
+        console.error('Failed to parse STL file:', error);
+        if (onError) {
+          onError(error);
+        }
+      }
+      return;
+    }
+    
+    // Otherwise load from URI
     this.stlLoader.load(uri,
       // onLoad
       function(geometry: THREE.BufferGeometry) {
-        mesh = new THREE.Mesh(geometry);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-
-        that.meshes.set(uri, mesh);
-        mesh = mesh.clone();
-        mesh.name = uri;
-        if (submesh && that.useSubMesh(mesh, submesh, centerSubmesh)) {
-          onLoad(mesh);
-        } else if (!submesh) {
-          onLoad(mesh);
-        }
+        meshReady(geometry);
       },
       // onProgress
       function (progress: any) {
@@ -2231,19 +2270,62 @@ export class Scene {
       function (error: any) {
         if (that.findResourceCb) {
           // Get the mesh from the websocket server.
-          that.findResourceCb(uri, (mesh: any, error?: string) => {
+          that.findResourceCb(uri, (meshData: any, error?: string) => {
             if (error !== undefined) {
+              console.error('STL websocket error:', error);
               // Mark the mesh as error in the loading manager.
               const manager = that.stlLoader.manager as WsLoadingManager;
               manager.markAsError(uri);
               return;
             }
 
-            onLoad(that.stlLoader.parse(new TextDecoder().decode(mesh)));
+            console.log('STL received from websocket:', uri, 'data type:', typeof meshData, 'size:', meshData?.byteLength || meshData?.length);
 
-            // Mark the mesh as done in the loading manager.
-            const manager = that.stlLoader.manager as WsLoadingManager;
-            manager.markAsDone(uri);
+            try {
+              // STL files are binary - convert to ArrayBuffer if needed
+              let buffer: ArrayBuffer;
+              if (meshData instanceof ArrayBuffer) {
+                buffer = meshData;
+              } else if (meshData instanceof Uint8Array) {
+                // Important: Uint8Array.buffer might be larger than the view
+                // We need to slice it to get the exact data
+                buffer = meshData.buffer.slice(meshData.byteOffset, meshData.byteOffset + meshData.byteLength);
+              } else if (ArrayBuffer.isView(meshData)) {
+                // Handle other typed arrays
+                const view = meshData as any;
+                buffer = view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength);
+              } else {
+                throw new Error(`Unexpected data type: ${typeof meshData}, constructor: ${meshData?.constructor?.name}`);
+              }
+              
+              console.log('STL buffer prepared:', uri, 'buffer size:', buffer.byteLength);
+              const geometry = that.stlLoader.parse(buffer);
+              console.log('STL parsed successfully:', uri, 'vertices:', geometry.attributes.position?.count);
+              
+              const stlMesh = new THREE.Mesh(geometry);
+              stlMesh.castShadow = true;
+              stlMesh.receiveShadow = true;
+              stlMesh.name = uri;
+              
+              that.meshes.set(uri, stlMesh);
+              const clonedMesh = stlMesh.clone();
+              
+              if (submesh && that.useSubMesh(clonedMesh, submesh, centerSubmesh)) {
+                console.log('STL loaded with submesh:', uri);
+                onLoad(clonedMesh);
+              } else if (!submesh) {
+                console.log('STL loaded:', uri);
+                onLoad(clonedMesh);
+              }
+              
+              // Mark the mesh as done in the loading manager.
+              const manager = that.stlLoader.manager as WsLoadingManager;
+              manager.markAsDone(uri);
+            } catch (parseError) {
+              console.error('Failed to parse STL from websocket:', uri, parseError);
+              const manager = that.stlLoader.manager as WsLoadingManager;
+              manager.markAsError(uri);
+            }
           });
         }
       }

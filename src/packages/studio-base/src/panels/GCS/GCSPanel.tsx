@@ -27,19 +27,19 @@ import {
 function makeDroneIcon(yawDeg: number): L.DivIcon {
   // Arrow SVG pointing up, rotated by yaw
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-      <g transform="rotate(${yawDeg}, 18, 18)">
+    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60">
+      <g transform="rotate(${yawDeg}, 30, 30)">
         <!-- Body -->
-        <polygon points="18,4 26,28 18,23 10,28" fill="#1976d2" stroke="#fff" stroke-width="2"/>
+        <polygon points="30,8 42,48 30,40 18,48" fill="#f44336" stroke="#fff" stroke-width="3"/>
         <!-- Center dot -->
-        <circle cx="18" cy="18" r="3" fill="#fff"/>
+        <circle cx="30" cy="30" r="5" fill="#fff"/>
       </g>
     </svg>`;
   return L.divIcon({
     className: "",
     html: svg,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
+    iconSize: [60, 60],
+    iconAnchor: [30, 30],
   });
 }
 
@@ -106,6 +106,28 @@ export function GCSPanel({ context }: Props): JSX.Element {
       pathRef.current = undefined;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Handle map resize ──────────────────────────────────────────
+  useEffect(() => {
+    const mapContainer = mapContainerRef.current;
+    if (!mapContainer) {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      const map = mapRef.current;
+      if (map) {
+        // Invalidate Leaflet's size cache and recalculate
+        map.invalidateSize();
+      }
+    });
+
+    resizeObserver.observe(mapContainer);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   // ── Update marker position + heading ─────────────────────────
   useEffect(() => {
