@@ -61,8 +61,10 @@ export const devServerConfig = (params: ConfigParams): WebpackConfiguration => (
     allowedHosts: "all",
     headers: {
       // Enable cross-origin isolation: https://resourcepolicy.fyi
+      // Use unsafe-none for COEP so that cross-origin WebSocket connections
+      // (foxglove_bridge on :8765, gzweb on :9002) are not blocked during dev.
       "cross-origin-opener-policy": "same-origin",
-      "cross-origin-embedder-policy": "credentialless",
+      "cross-origin-embedder-policy": "unsafe-none",
     },
 
     client: {

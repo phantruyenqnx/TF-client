@@ -9,6 +9,8 @@ export const panels = {
   callServiceDescription: "Call a service and view the service call result",
   dataSourceInfo: "Data Source Info",
   dataSourceInfoDescription: "View details like topics and timestamps for the current data source.",
+  gazebo: "Gazebo",
+  gazeboDescription: "Display a Gazebo simulation scene via gzweb WebSocket connection.",
   gauge: "Gauge",
   gaugeDescription: "Display a colored gauge based on a continuous value.",
   image: "Image",

@@ -7,6 +7,7 @@ import { PanelInfo } from "@tf/studio-base/context/PanelCatalogContext";
 import { TAB_PANEL_TYPE } from "@tf/studio-base/util/globalConstants";
 
 import dataSourceInfoThumbnail from "./DataSourceInfo/thumbnail.png";
+import gazeboThumbnail from "./ThreeDeeRender/thumbnail.png";
 import gaugeThumbnail from "./Gauge/thumbnail.png";
 import imageThumbnail from "./Image/thumbnail.png";
 import indicatorThumbnail from "./Indicator/thumbnail.png";
@@ -33,6 +34,13 @@ export const getBuiltin: (t: TFunction<"panels">) => PanelInfo[] = (t) => [
     description: t("3DPanelDescription"),
     thumbnail: threeDeeRenderThumbnail,
     module: async () => await import("./ThreeDeeRender"),
+  },
+  {
+    title: t("gazebo"),
+    type: "Gazebo",
+    description: t("gazeboDescription"),
+    thumbnail: gazeboThumbnail,
+    module: async () => await import("./Gazebo"),
   },
   {
     title: t("ROSDiagnosticsDetail"),
