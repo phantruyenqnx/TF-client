@@ -360,9 +360,32 @@ export class Transport {
             // TODO(germanmas) Throw a proper Unauthorized error.
             console.error('Invalid key');
             break;
-          default:
+          default: {
             // Parse the message definitions.
-            this.root = parse(fileReader.result as string, {keepCase: true}).root;
+            // gz-launch7's websocket server may send a proto bundle that references types not
+            // defined within it (Sensor, Geometry, Material, etc. from gz-msgs10). Append
+            // stubs only for types missing from the bundle so protobufjs can resolve all
+            // field types without errors.
+            const received = fileReader.result as string;
+            const stubs: Array<[RegExp, string]> = [
+              [/^message Sensor\b/m,   'message Sensor { Header header = 1; string name = 2; uint32 id = 3; }'],
+              [/^message Geometry\b/m, 'message Geometry { Header header = 1; }'],
+              [/^message Material\b/m, 'message Material { Header header = 1; }'],
+              [/^message Inertial\b/m, 'message Inertial { Header header = 1; }'],
+              [/^message Density\b/m,  'message Density { Header header = 1; }'],
+              [/^message Collision\b/m,'message Collision { Header header = 1; }'],
+              [/^message Projector\b/m,'message Projector { Header header = 1; }'],
+              [/^message Battery\b/m,  'message Battery { Header header = 1; }'],
+              [/^message Gearbox\b/m,  'message Gearbox { Header header = 1; }'],
+              [/^message Screw\b/m,    'message Screw { Header header = 1; }'],
+              [/^message Plugin\b/m,   'message Plugin { Header header = 1; }'],
+              [/^enum LightType\b/m,   'enum LightType { POINT = 0; SPOT = 1; DIRECTIONAL = 2; }'],
+            ];
+            const missing = stubs
+              .filter(([pattern]) => !pattern.test(received))
+              .map(([, stub]) => stub)
+              .join('\n');
+            this.root = parse(received + (missing ? '\n' + missing : ''), {keepCase: true}).root;
 
             // Request topics.
             this.sendMessage(['topics-types', '', '', '']);
@@ -373,6 +396,7 @@ export class Transport {
             // Now we can update the connection status.
             this.status$.next('connected');
             break;
+          }
         }
       };
 
