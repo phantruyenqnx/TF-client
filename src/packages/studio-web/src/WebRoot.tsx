@@ -22,6 +22,7 @@ import CssBaseline from "@tf/studio-base/components/CssBaseline";
 import ThemeProvider from "@tf/studio-base/theme/ThemeProvider";
 
 import { CreateProject } from "./screens/CreateProject";
+import { SessionConfig } from "./screens/SessionConfig";
 import { Welcome } from "./screens/Welcome/Welcome";
 import LocalStorageAppConfiguration from "./services/LocalStorageAppConfiguration";
 
@@ -32,7 +33,7 @@ const isDevelopment = process.env.NODE_ENV === "development";
 // CreateProject screen run before SharedRoot is mounted (SharedRoot is
 // part of the cockpit shell), so the pre-cockpit screens share a
 // single ThemeProvider + CssBaseline wrap mounted here.
-type View = "welcome" | "create-project" | "cockpit";
+type View = "welcome" | "create-project" | "session-config" | "cockpit";
 
 export function WebRoot(props: {
   extraProviders: JSX.Element[] | undefined;
@@ -66,14 +67,20 @@ export function WebRoot(props: {
   }, [props.dataSources]);
 
   const [view, setView] = useState<View>("welcome");
-  // The selected project_id is stashed here so M3-FE-3 (Session Config)
-  // can lift it out of state when it lands. The cockpit itself does
-  // not consume it yet.
-  const [, setActiveProjectId] = useState<string | undefined>(undefined);
+  // Project the user picked in Welcome. Consumed by SessionConfig to
+  // load /api/v1/projects/{id}/config and POST a new session.
+  const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
+  // session_id from the most recent successful POST /sessions, stored
+  // for M3-FE-4 (Starting Services) to consume. The cockpit itself
+  // does not read it yet.
+  const [, setActiveSessionId] = useState<string | undefined>(undefined);
 
+  // Open on a Welcome row no longer jumps straight to the cockpit —
+  // it routes through SessionConfig so the user can review services
+  // and start the SIL explicitly (phase1.md §11.6, Screen 3).
   const handleOpenProject = useCallback((projectId: string) => {
     setActiveProjectId(projectId);
-    setView("cockpit");
+    setView("session-config");
   }, []);
 
   const handleGoToCreate = useCallback(() => {
@@ -82,6 +89,11 @@ export function WebRoot(props: {
 
   const handleBackToWelcome = useCallback(() => {
     setView("welcome");
+  }, []);
+
+  const handleSessionStarted = useCallback((sessionId: string) => {
+    setActiveSessionId(sessionId);
+    setView("cockpit");
   }, []);
 
   if (view === "welcome") {
@@ -99,6 +111,33 @@ export function WebRoot(props: {
       <ThemeProvider isDark>
         <CssBaseline>
           <CreateProject onBack={handleBackToWelcome} />
+        </CssBaseline>
+      </ThemeProvider>
+    );
+  }
+
+  if (view === "session-config") {
+    // activeProjectId is guaranteed to be set here because the only
+    // path to this view is handleOpenProject, which sets it first.
+    // The fallback keeps TypeScript happy and degrades safely if a
+    // future change breaks that invariant.
+    if (activeProjectId == undefined) {
+      return (
+        <ThemeProvider isDark>
+          <CssBaseline>
+            <Welcome onOpenProject={handleOpenProject} onCreateProject={handleGoToCreate} />
+          </CssBaseline>
+        </ThemeProvider>
+      );
+    }
+    return (
+      <ThemeProvider isDark>
+        <CssBaseline>
+          <SessionConfig
+            projectId={activeProjectId}
+            onBack={handleBackToWelcome}
+            onSessionStarted={handleSessionStarted}
+          />
         </CssBaseline>
       </ThemeProvider>
     );

@@ -21,3 +21,4 @@
 
 export { Welcome } from "./Welcome";
 export { CreateProject } from "./CreateProject";
+export { SessionConfig } from "./SessionConfig";
