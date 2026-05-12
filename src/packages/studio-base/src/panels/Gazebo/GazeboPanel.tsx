@@ -2,6 +2,15 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import {
+  Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Tooltip,
+} from "@mui/material";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { makeStyles } from "tss-react/mui";
 import { DeepPartial } from "ts-essentials";
@@ -31,6 +40,36 @@ const useStyles = makeStyles()((theme) => {
   const divider = isDark ? "#2a2d3e" : "#e0e0e0";
 
   return {
+    toolbar: {
+      backgroundColor: cardBg,
+      borderBottom: `1px solid ${divider}`,
+      padding: theme.spacing(0.5, 1),
+      display: "flex",
+      alignItems: "center",
+      gap: theme.spacing(1),
+      flexWrap: "wrap",
+      flexShrink: 0,
+      minHeight: 44,
+    },
+    toolbarSection: {
+      display: "flex",
+      alignItems: "center",
+      gap: theme.spacing(0.5),
+    },
+    toolbarSpacer: {
+      flex: "1 1 auto",
+    },
+    toolbarPlaceholder: {
+      color: textMuted,
+      fontSize: "12px",
+      fontStyle: "italic",
+    },
+    cameraSelect: {
+      minWidth: 140,
+    },
+    entitySelect: {
+      minWidth: 160,
+    },
     statsBar: {
       backgroundColor: cardBg,
       borderTop: `1px solid ${divider}`,
@@ -67,6 +106,12 @@ const useStyles = makeStyles()((theme) => {
       fontFamily: theme.typography.fontMonospace,
       whiteSpace: "nowrap",
     },
+    rtfLow: {
+      color: theme.palette.error.main,
+    },
+    rtfHigh: {
+      color: theme.palette.success.main,
+    },
   };
 });
 
@@ -95,7 +140,10 @@ type WorldStats = {
   simTime: TimeData | null;
   realTime: TimeData | null;
   realtimeFactor: number;
+  paused: boolean;
 };
+
+type CameraMode = "orbit" | "follow" | "thirdPerson";
 
 function formatTime(time: TimeData | null): string {
   if (!time) {
@@ -137,7 +185,16 @@ export function GazeboPanel({ context }: Props): JSX.Element {
     simTime: null,
     realTime: null,
     realtimeFactor: 0,
+    paused: false,
   });
+  // Connection readiness drives the toolbar: until the SceneManager
+  // has handshaken with gz-bridge we cannot call any control RPCs.
+  const [connected, setConnected] = useState(false);
+  // Model names populated from sceneMgr.getModels() on every
+  // connection-status emission. The entity picker reads this list.
+  const [models, setModels] = useState<string[]>([]);
+  const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
+  const [selectedEntity, setSelectedEntity] = useState<string>("");
 
   const sceneElementRef = useRef<HTMLDivElement | null>(null);
   const sceneMgrRef = useRef<SceneManagerInstance | null>(null);
@@ -212,6 +269,7 @@ export function GazeboPanel({ context }: Props): JSX.Element {
                     simTime: msg.sim_time ?? null,
                     realTime: msg.real_time ?? null,
                     realtimeFactor: msg.real_time_factor ?? 0,
+                    paused: msg.paused ?? false,
                   });
                 }
               );
@@ -219,6 +277,20 @@ export function GazeboPanel({ context }: Props): JSX.Element {
               statsTopicNameRef.current = statsTopicName;
             }
           }
+        }
+        setConnected(ready);
+        if (ready && sceneMgr) {
+          // Pull the (possibly still-empty) model list and surface
+          // names to the entity picker. The list grows as scene/info
+          // populates the SceneManager; per the task brief we only
+          // refresh on connection-status emissions.
+          const list = (sceneMgr as any).getModels?.() ?? [];
+          const names: string[] = list
+            .map((m: any) => (typeof m === "string" ? m : (m?.name ?? "")))
+            .filter((n: string) => n !== "");
+          setModels(names);
+        } else {
+          setModels([]);
         }
       });
 
@@ -266,13 +338,206 @@ export function GazeboPanel({ context }: Props): JSX.Element {
     };
   }, []);
 
+  // --- Control-bar action handlers --------------------------------
+  // worldName is read fresh inside each handler because the active
+  // world can change on reconnect; caching it in state would risk
+  // dispatching control RPCs against a stale world string.
+  const handlePlay = useCallback(() => {
+    const sceneMgr = sceneMgrRef.current as any;
+    const transport = sceneMgr?.transport;
+    const worldName = transport?.getWorld?.();
+    if (transport == undefined || worldName == undefined || worldName === "") {
+      return;
+    }
+    transport.requestService(
+      `/world/${worldName}/control`,
+      "gz.msgs.WorldControl",
+      { pause: false },
+    );
+  }, []);
+
+  const handlePause = useCallback(() => {
+    const sceneMgr = sceneMgrRef.current as any;
+    const transport = sceneMgr?.transport;
+    const worldName = transport?.getWorld?.();
+    if (transport == undefined || worldName == undefined || worldName === "") {
+      return;
+    }
+    transport.requestService(
+      `/world/${worldName}/control`,
+      "gz.msgs.WorldControl",
+      { pause: true },
+    );
+  }, []);
+
+  const handleReset = useCallback(() => {
+    const sceneMgr = sceneMgrRef.current as any;
+    const transport = sceneMgr?.transport;
+    const worldName = transport?.getWorld?.();
+    if (transport == undefined || worldName == undefined || worldName === "") {
+      return;
+    }
+    transport.requestService(
+      `/world/${worldName}/control`,
+      "gz.msgs.WorldControl",
+      { reset: { all: true } },
+    );
+  }, []);
+
+  const handleStep = useCallback(() => {
+    const sceneMgr = sceneMgrRef.current as any;
+    const transport = sceneMgr?.transport;
+    const worldName = transport?.getWorld?.();
+    if (transport == undefined || worldName == undefined || worldName === "") {
+      return;
+    }
+    transport.requestService(
+      `/world/${worldName}/control`,
+      "gz.msgs.WorldControl",
+      { multi_step: 1 },
+    );
+  }, []);
+
+  // Apply a (mode, entity) pair to the scene. Centralised so both
+  // the mode dropdown and the entity dropdown share the same
+  // dispatch path.
+  const applyCameraSelection = useCallback((mode: CameraMode, entity: string) => {
+    const sceneMgr = sceneMgrRef.current as any;
+    if (sceneMgr == undefined) {
+      return;
+    }
+    if (mode === "orbit") {
+      sceneMgr.resetView?.();
+      return;
+    }
+    if (entity === "") {
+      // No-op until the user picks an entity; the dropdown will
+      // still reflect the mode so the picker stays visible.
+      return;
+    }
+    if (mode === "follow") {
+      sceneMgr.follow?.(entity);
+    } else {
+      sceneMgr.thirdPersonFollow?.(entity);
+    }
+  }, []);
+
+  const handleCameraModeChange = useCallback(
+    (e: SelectChangeEvent<CameraMode>) => {
+      const mode = e.target.value as CameraMode;
+      setCameraMode(mode);
+      applyCameraSelection(mode, selectedEntity);
+    },
+    [applyCameraSelection, selectedEntity],
+  );
+
+  const handleEntityChange = useCallback(
+    (e: SelectChangeEvent<string>) => {
+      const entity = e.target.value;
+      setSelectedEntity(entity);
+      applyCameraSelection(cameraMode, entity);
+    },
+    [applyCameraSelection, cameraMode],
+  );
+
   useLayoutEffect(() => {
     renderDone();
   }, [renderDone]);
 
+  const rtf = worldStats.realtimeFactor;
+  // Per phase1 §11.1.a: red when sim is dragging, green when nearly
+  // real-time, otherwise the default monospace stat colour. RTF=0
+  // means we have no measurement yet — leave it neutral.
+  let rtfClass = classes.statsValue;
+  if (rtf > 0 && rtf < 0.5) {
+    rtfClass = `${classes.statsValue} ${classes.rtfLow}`;
+  } else if (rtf >= 0.9) {
+    rtfClass = `${classes.statsValue} ${classes.rtfHigh}`;
+  }
+
+  const showEntityPicker = cameraMode !== "orbit";
+
   return (
     <ThemeProvider isDark={colorScheme === "dark"}>
       <Stack fullHeight>
+        <div className={classes.toolbar}>
+          {!connected ? (
+            <span className={classes.toolbarPlaceholder}>Connecting…</span>
+          ) : (
+            <>
+              <div className={classes.toolbarSection}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={handlePlay}
+                  disabled={!worldStats.paused}
+                >
+                  ▶ Play
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={handlePause}
+                  disabled={worldStats.paused}
+                >
+                  ⏸ Pause
+                </Button>
+                <Tooltip title="Resets sim clock and model poses. Spawned model starting positions may not fully reset depending on Gazebo version.">
+                  <span>
+                    <Button size="small" variant="outlined" onClick={handleReset}>
+                      ↺ Reset
+                    </Button>
+                  </span>
+                </Tooltip>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={handleStep}
+                  disabled={!worldStats.paused}
+                >
+                  ⏭ Step
+                </Button>
+              </div>
+              <span className={classes.toolbarSpacer} />
+              <div className={classes.toolbarSection}>
+                <FormControl size="small" className={classes.cameraSelect}>
+                  <InputLabel id="gz-camera-mode-label">Camera</InputLabel>
+                  <Select
+                    labelId="gz-camera-mode-label"
+                    label="Camera"
+                    value={cameraMode}
+                    onChange={handleCameraModeChange}
+                  >
+                    <MenuItem value="orbit">Orbit</MenuItem>
+                    <MenuItem value="follow">Follow</MenuItem>
+                    <MenuItem value="thirdPerson">Third-person</MenuItem>
+                  </Select>
+                </FormControl>
+                {showEntityPicker && (
+                  <FormControl size="small" className={classes.entitySelect}>
+                    <InputLabel id="gz-entity-label">Entity</InputLabel>
+                    <Select
+                      labelId="gz-entity-label"
+                      label="Entity"
+                      value={selectedEntity}
+                      onChange={handleEntityChange}
+                      displayEmpty
+                    >
+                      <MenuItem value="" disabled>
+                        Select entity…
+                      </MenuItem>
+                      {models.map((name) => (
+                        <MenuItem key={name} value={name}>
+                          {name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              </div>
+            </>
+          )}
+        </div>
         <div
           ref={sceneElementRef}
           style={{ width: "100%", flex: 1, overflow: "hidden", background: "#000" }}
@@ -288,8 +553,8 @@ export function GazeboPanel({ context }: Props): JSX.Element {
           </div>
           <div className={classes.statsCell}>
             <span className={classes.statsLabel}>RTF</span>
-            <span className={classes.statsValue}>
-              {worldStats.realtimeFactor > 0 ? worldStats.realtimeFactor.toFixed(2) : "--"}x
+            <span className={rtfClass}>
+              {rtf > 0 ? rtf.toFixed(2) : "--"}x
             </span>
           </div>
         </div>
