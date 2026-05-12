@@ -12,6 +12,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import * as THREE from "three";
 import { makeStyles } from "tss-react/mui";
 import { DeepPartial } from "ts-essentials";
 
@@ -21,6 +22,8 @@ import ThemeProvider from "@tf/studio-base/theme/ThemeProvider";
 
 import type { PanelExtensionContext } from "@tf/studio";
 import type { SceneManager } from "gzweb";
+
+import { GazeboModelTree, ModelInfo } from "./GazeboModelTree";
 
 type SceneManagerInstance = SceneManager;
 
@@ -112,6 +115,19 @@ const useStyles = makeStyles()((theme) => {
     rtfHigh: {
       color: theme.palette.success.main,
     },
+    sceneRow: {
+      flex: 1,
+      display: "flex",
+      flexDirection: "row",
+      overflow: "hidden",
+      minHeight: 0,
+    },
+    sceneContainer: {
+      flex: 1,
+      overflow: "hidden",
+      background: "#000",
+      minWidth: 0,
+    },
   };
 });
 
@@ -196,9 +212,40 @@ export function GazeboPanel({ context }: Props): JSX.Element {
   const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
   const [selectedEntity, setSelectedEntity] = useState<string>("");
 
+  // --- Model-tree sidebar state (M3-FE-7) ---------------------------
+  // Tree is rebuilt from transport.sceneInfo$ on every scene
+  // re-broadcast (one shot per connect, plus add/remove if the
+  // bridge re-emits). Joint angles stream in via the world-level
+  // joint_state topic and are keyed `${modelName}/${jointName}` so
+  // they survive multi-vehicle scenes (phase1 §11.1.d).
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [tree, setTree] = useState<ModelInfo[]>([]);
+  const [worldName, setWorldName] = useState<string>("");
+  const [expandedModels, setExpandedModels] = useState<Set<string>>(
+    () => new Set<string>(),
+  );
+  const [expandedLinks, setExpandedLinks] = useState<Set<string>>(
+    () => new Set<string>(),
+  );
+  const [axesEnabled, setAxesEnabled] = useState<Set<string>>(
+    () => new Set<string>(),
+  );
+  const [jointAngles, setJointAngles] = useState<Map<string, number>>(
+    () => new Map<string, number>(),
+  );
+
   const sceneElementRef = useRef<HTMLDivElement | null>(null);
   const sceneMgrRef = useRef<SceneManagerInstance | null>(null);
   const statsTopicNameRef = useRef<string | null>(null);
+  const jointStateTopicNameRef = useRef<string | null>(null);
+  // Live coordinate-frame helpers parented to the link Object3D in
+  // the gz3d scene. We deliberately do NOT subscribe to
+  // /world/<w>/dynamic_pose/info ourselves: SceneManager already
+  // subscribes to that topic and calls scene.setPose() on every
+  // named entity each sim tick, so an AxesHelper added as a child
+  // of the link inherits the pose for free. One source of truth,
+  // zero duplicate traffic.
+  const axesHelpersRef = useRef<Map<string, THREE.AxesHelper>>(new Map());
 
   const settingsActionHandler = useCallback((action: SettingsTreeAction) => {
     if (action.action !== "update") {
@@ -240,6 +287,8 @@ export function GazeboPanel({ context }: Props): JSX.Element {
     sceneElementRef.current.id = elementId;
 
     let sceneMgr: SceneManagerInstance;
+    let sceneInfoSub: { unsubscribe: () => void } | undefined;
+    let readySub: { unsubscribe: () => void } | undefined;
 
     // Dynamic import to avoid bundling the heavy lib at top level
     void import("gzweb").then((gzweb) => {
@@ -253,15 +302,58 @@ export function GazeboPanel({ context }: Props): JSX.Element {
       });
       sceneMgrRef.current = sceneMgr;
 
+      // Subscribe to sceneInfo$ to build the model-tree sidebar.
+      // sceneInfo$ emits the full gz.msgs.Scene on connect and
+      // again whenever the bridge re-broadcasts. We rebuild the
+      // shallow tree state from scratch on each emission — the
+      // payload is small (a few dozen models max in Phase 1) and
+      // this keeps the reducer trivial.
+      sceneInfoSub = (sceneMgr as any).transport?.sceneInfo$?.subscribe?.(
+        (info: any) => {
+          if (info == undefined) {
+            setTree([]);
+            return;
+          }
+          const next: ModelInfo[] = ((info.model as any[]) ?? []).map(
+            (m: any) => ({
+              name: String(m?.name ?? ""),
+              links: ((m?.link as any[]) ?? []).map((l: any) => ({
+                name: String(l?.name ?? ""),
+              })),
+              joints: ((m?.joint as any[]) ?? []).map((j: any) => ({
+                name: String(j?.name ?? ""),
+                parent: j?.parent != undefined ? String(j.parent) : undefined,
+                child: j?.child != undefined ? String(j.child) : undefined,
+              })),
+            }),
+          );
+          setTree(next);
+          // Auto-expand the first model so the tree is useful on
+          // the first connect without the user having to click.
+          if (next.length > 0) {
+            const firstName = next[0]!.name;
+            setExpandedModels((prev) => {
+              if (prev.has(firstName)) {
+                return prev;
+              }
+              const copy = new Set(prev);
+              copy.add(firstName);
+              return copy;
+            });
+          }
+        },
+      );
+
       // Subscribe to world stats when the connection is ready
-      const readySub = (sceneMgr as any).getConnectionStatusAsObservable().subscribe((ready: boolean) => {
+      readySub = (sceneMgr as any).getConnectionStatusAsObservable().subscribe((ready: boolean) => {
         if (ready && sceneMgr) {
           // Access the transport to get the world name
           const transport = (sceneMgr as any).transport;
           if (transport) {
-            const worldName = transport.getWorld();
-            if (worldName) {
-              const statsTopicName = `/world/${worldName}/stats`;
+            const currentWorld = transport.getWorld();
+            if (currentWorld) {
+              setWorldName(currentWorld);
+              const statsTopicName = `/world/${currentWorld}/stats`;
               const statsTopic = new Topic(
                 statsTopicName,
                 (msg: any) => {
@@ -275,10 +367,82 @@ export function GazeboPanel({ context }: Props): JSX.Element {
               );
               (sceneMgr as any).subscribeToTopic(statsTopic);
               statsTopicNameRef.current = statsTopicName;
+
+              // World-level joint_state from JointStatePublisher
+              // (M3-BE-2). One subscription covers every model in
+              // the world — the bridge emits one gz.msgs.Model
+              // message per model per cycle, each containing all
+              // of that model's joints. We accept multiple shapes
+              // because the gz-msgs JSON encoding for Joint angles
+              // has shifted between gz-sim releases.
+              const jointTopicName = `/world/${currentWorld}/joint_state`;
+              const jointTopic = new Topic(jointTopicName, (msg: any) => {
+                const modelName: string =
+                  typeof msg?.name === "string" ? msg.name : "";
+                if (modelName === "") {
+                  return;
+                }
+                const joints: any[] = Array.isArray(msg?.joint)
+                  ? msg.joint
+                  : [];
+                if (joints.length === 0) {
+                  return;
+                }
+                setJointAngles((prev) => {
+                  const next = new Map(prev);
+                  for (const j of joints) {
+                    const jointName: string =
+                      typeof j?.name === "string" ? j.name : "";
+                    if (jointName === "") {
+                      continue;
+                    }
+                    // Preferred shape (gz-sim 8 + gz-msgs 10):
+                    //   joint.axis1.position : double (radians)
+                    // Legacy shape that the M3-FE-7 brief documents:
+                    //   joint.angle[0].radian : double
+                    let angle: number | undefined;
+                    if (typeof j?.axis1?.position === "number") {
+                      angle = j.axis1.position;
+                    } else if (typeof j?.axis_1?.position === "number") {
+                      angle = j.axis_1.position;
+                    } else if (
+                      Array.isArray(j?.angle) &&
+                      typeof j.angle[0]?.radian === "number"
+                    ) {
+                      angle = j.angle[0].radian;
+                    } else if (typeof j?.angle === "number") {
+                      angle = j.angle;
+                    }
+                    if (angle != undefined) {
+                      next.set(`${modelName}/${jointName}`, angle);
+                    }
+                  }
+                  return next;
+                });
+              });
+              // Transport.subscribe crashes when the topic isn't in
+              // availableTopics yet (reads publisher['msg_type'] on undefined).
+              // joint_state is advertised after scene/info, so bypass the
+              // availableTopics lookup and send the 'sub' frame directly.
+              const transport = (sceneMgr as any).transport;
+              if (
+                transport?.topicMap != undefined &&
+                typeof transport.sendMessage === "function"
+              ) {
+                transport.topicMap.set(jointTopicName, jointTopic);
+                transport.sendMessage(["sub", jointTopicName, "", ""]);
+              } else {
+                (sceneMgr as any).subscribeToTopic(jointTopic);
+              }
+              jointStateTopicNameRef.current = jointTopicName;
             }
           }
         }
         setConnected(ready);
+        if (!ready) {
+          setWorldName("");
+          setJointAngles(new Map());
+        }
         if (ready && sceneMgr) {
           // Pull the (possibly still-empty) model list and surface
           // names to the entity picker. The list grows as scene/info
@@ -294,9 +458,6 @@ export function GazeboPanel({ context }: Props): JSX.Element {
         }
       });
 
-      return () => {
-        readySub.unsubscribe();
-      };
     });
 
     return () => {
@@ -304,6 +465,33 @@ export function GazeboPanel({ context }: Props): JSX.Element {
         (sceneMgr as any).unsubscribeFromTopic(statsTopicNameRef.current);
         statsTopicNameRef.current = null;
       }
+      if (jointStateTopicNameRef.current && sceneMgr) {
+        (sceneMgr as any).unsubscribeFromTopic(jointStateTopicNameRef.current);
+        jointStateTopicNameRef.current = null;
+      }
+      sceneInfoSub?.unsubscribe();
+      readySub?.unsubscribe();
+      // Detach and dispose every coordinate-frame helper still
+      // parented to the soon-to-be-torn-down scene. THREE leaks
+      // GPU memory if AxesHelper.geometry / .material are not
+      // disposed on unmount.
+      for (const helper of axesHelpersRef.current.values()) {
+        helper.parent?.remove(helper);
+        helper.geometry.dispose();
+        const mat = helper.material as
+          | THREE.Material
+          | THREE.Material[]
+          | undefined;
+        if (Array.isArray(mat)) {
+          for (const m of mat) {
+            m.dispose();
+          }
+        } else if (mat) {
+          mat.dispose();
+        }
+      }
+      axesHelpersRef.current.clear();
+      setAxesEnabled(new Set());
       if (sceneMgr) {
         sceneMgr.disconnect();
       }
@@ -397,6 +585,129 @@ export function GazeboPanel({ context }: Props): JSX.Element {
       { multi_step: 1 },
     );
   }, []);
+
+  // --- Sidebar / tree handlers (M3-FE-7) --------------------------
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+  }, []);
+
+  const handleToggleModel = useCallback((modelName: string) => {
+    setExpandedModels((prev) => {
+      const next = new Set(prev);
+      if (next.has(modelName)) {
+        next.delete(modelName);
+      } else {
+        next.add(modelName);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleToggleLink = useCallback(
+    (modelName: string, linkName: string) => {
+      const key = `${modelName}/${linkName}`;
+      setExpandedLinks((prev) => {
+        const next = new Set(prev);
+        if (next.has(key)) {
+          next.delete(key);
+        } else {
+          next.add(key);
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
+  // Add or remove a coordinate-frame helper for a single link.
+  //
+  // We parent the AxesHelper directly to the link's THREE.Object3D
+  // inside the gz3d scene. SceneManager already subscribes to
+  // /world/<w>/dynamic_pose/info and calls scene.setPose() on every
+  // named entity each sim tick, so any child Object3D inherits the
+  // updated pose automatically. This avoids duplicating that
+  // subscription in the panel.
+  //
+  // gz3d's naming convention is not perfectly stable across gz-sim
+  // releases — the SDF parser has used `link`, `model/link` and
+  // `model::link` at different points. We try all three before
+  // giving up, so the overlay works regardless of how SceneManager
+  // happens to label the Object3D in the current world.
+  const handleToggleAxes = useCallback(
+    (modelName: string, linkName: string, on: boolean) => {
+      const key = `${modelName}/${linkName}`;
+      const sceneMgr = sceneMgrRef.current as any;
+      const scene = sceneMgr?.scene;
+      if (scene == undefined) {
+        return;
+      }
+
+      if (on) {
+        if (axesHelpersRef.current.has(key)) {
+          return;
+        }
+        const candidates = [
+          `${modelName}/${linkName}`,
+          `${modelName}::${linkName}`,
+          linkName,
+        ];
+        let parent: THREE.Object3D | undefined;
+        for (const candidate of candidates) {
+          const obj = scene.getByName?.(candidate) as
+            | THREE.Object3D
+            | undefined;
+          if (obj != undefined) {
+            parent = obj;
+            break;
+          }
+        }
+        if (parent == undefined) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[GazeboPanel] No scene object found for link ${key}; ` +
+              `tried ${candidates.join(", ")}`,
+          );
+          return;
+        }
+        const helper = new THREE.AxesHelper(0.25);
+        helper.name = `_tfAxes_${key}`;
+        parent.add(helper);
+        axesHelpersRef.current.set(key, helper);
+        setAxesEnabled((prev) => {
+          const nextSet = new Set(prev);
+          nextSet.add(key);
+          return nextSet;
+        });
+      } else {
+        const helper = axesHelpersRef.current.get(key);
+        if (helper != undefined) {
+          helper.parent?.remove(helper);
+          helper.geometry.dispose();
+          const mat = helper.material as
+            | THREE.Material
+            | THREE.Material[]
+            | undefined;
+          if (Array.isArray(mat)) {
+            for (const m of mat) {
+              m.dispose();
+            }
+          } else if (mat) {
+            mat.dispose();
+          }
+        }
+        axesHelpersRef.current.delete(key);
+        setAxesEnabled((prev) => {
+          if (!prev.has(key)) {
+            return prev;
+          }
+          const nextSet = new Set(prev);
+          nextSet.delete(key);
+          return nextSet;
+        });
+      }
+    },
+    [],
+  );
 
   // Apply a (mode, entity) pair to the scene. Centralised so both
   // the mode dropdown and the entity dropdown share the same
@@ -538,10 +849,22 @@ export function GazeboPanel({ context }: Props): JSX.Element {
             </>
           )}
         </div>
-        <div
-          ref={sceneElementRef}
-          style={{ width: "100%", flex: 1, overflow: "hidden", background: "#000" }}
-        />
+        <div className={classes.sceneRow}>
+          <GazeboModelTree
+            open={sidebarOpen}
+            worldName={worldName}
+            tree={tree}
+            expandedModels={expandedModels}
+            expandedLinks={expandedLinks}
+            axesEnabled={axesEnabled}
+            jointAngles={jointAngles}
+            onToggleSidebar={handleToggleSidebar}
+            onToggleModel={handleToggleModel}
+            onToggleLink={handleToggleLink}
+            onToggleAxes={handleToggleAxes}
+          />
+          <div ref={sceneElementRef} className={classes.sceneContainer} />
+        </div>
         <div className={classes.statsBar}>
           <div className={classes.statsCell}>
             <span className={classes.statsLabel}>SIM TIME</span>
