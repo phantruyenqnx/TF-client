@@ -253,10 +253,6 @@ export function SessionConfig({
       );
       if (res.status === 201) {
         const body = (await res.json()) as SessionCreatedResponse;
-        // M3-FE-4 lands the Starting Services screen here. For now we
-        // log a breadcrumb and hand off to the cockpit so the user can
-        // see the existing Foxglove panels load.
-        console.warn("M3-FE-4 not yet implemented");
         onSessionStarted(body.session_id);
         return;
       }

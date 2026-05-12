@@ -203,10 +203,6 @@ export function CreateProject({ onBack }: CreateProjectProps): JSX.Element {
         const raw = body.error ?? `POST /projects failed: ${res.status}`;
         throw new Error(raw);
       }
-      // 201: M3-FE-3 will wire the Session Config screen here. For
-      // now, log a breadcrumb and bounce to Welcome so the user can
-      // see the new project in the list.
-      console.warn("M3-FE-3 not yet implemented");
       onBack();
     } catch (err) {
       const raw = err instanceof Error ? err.message : String(err);

@@ -21,6 +21,8 @@ import {
 import CssBaseline from "@tf/studio-base/components/CssBaseline";
 import ThemeProvider from "@tf/studio-base/theme/ThemeProvider";
 
+import { TFShell } from "./components/TFShell";
+import CockpitContext from "./context/CockpitContext";
 import { CreateProject } from "./screens/CreateProject";
 import { SessionConfig } from "./screens/SessionConfig";
 import { StartingServices } from "./screens/StartingServices";
@@ -177,17 +179,39 @@ export function WebRoot(props: {
     );
   }
 
+  // Cockpit branch: wrap SharedRoot in CockpitContext so the
+  // TF-specific top bar (rendered via AppBarComponent) can read the
+  // active project/session and trigger Stop/Restart navigations.
+  // Falls back to the data-source picker when no session has been
+  // started yet (defensive — the only path into this branch sets
+  // both ids first).
+  const cockpitValue =
+    activeProjectId != undefined && activeSessionId != undefined
+      ? {
+          projectId: activeProjectId,
+          sessionId: activeSessionId,
+          onStop: handleBackToWelcome,
+          onRestart: handleSessionStarted,
+        }
+      : undefined;
+  // Honour an externally provided AppBarComponent if WebRoot's caller
+  // passed one (e.g. desktop builds with custom window controls);
+  // otherwise inject TFShell so the cockpit gets the TF top bar.
+  const AppBarComponent = props.AppBarComponent ?? TFShell;
+
   return (
-    <SharedRoot
-      enableLaunchPreferenceScreen
-      deepLinks={[window.location.href]}
-      dataSources={dataSources}
-      appConfiguration={appConfiguration}
-      enableGlobalCss
-      extraProviders={props.extraProviders}
-      AppBarComponent={props.AppBarComponent}
-    >
-      {props.children}
-    </SharedRoot>
+    <CockpitContext.Provider value={cockpitValue}>
+      <SharedRoot
+        enableLaunchPreferenceScreen
+        deepLinks={[window.location.href]}
+        dataSources={dataSources}
+        appConfiguration={appConfiguration}
+        enableGlobalCss
+        extraProviders={props.extraProviders}
+        AppBarComponent={AppBarComponent}
+      >
+        {props.children}
+      </SharedRoot>
+    </CockpitContext.Provider>
   );
 }

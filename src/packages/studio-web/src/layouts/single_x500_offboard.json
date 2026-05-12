@@ -1,0 +1,19 @@
+{
+  "configById": {
+    "Gazebo!1": {
+      "websocketUrl": "ws://localhost:9002"
+    },
+    "GCS!1": {}
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1.0
+  },
+  "layout": {
+    "first": "Gazebo!1",
+    "second": "GCS!1",
+    "direction": "row",
+    "splitPercentage": 60
+  }
+}
