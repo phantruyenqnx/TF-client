@@ -30,6 +30,8 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { makeStyles } from "tss-react/mui";
 
+import { ImportProjectDialog } from "./ImportProjectDialog";
+
 // Phase 1: TF Server always listens on localhost:3000 (phase1.md §3.7,
 // §9). No env var indirection until Phase 2.
 const API_BASE = "http://localhost:3000";
@@ -304,10 +306,28 @@ export function Welcome({ onOpenProject, onCreateProject }: WelcomeProps): JSX.E
     onCreateProject();
   }, [onCreateProject]);
 
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
   const handleImportClick = useCallback(() => {
-    // M3-FE-1b wires this to the Import Project dialog.
-    console.warn("M3-FE-1b not yet implemented");
+    setImportDialogOpen(true);
   }, []);
+
+  const handleImportDialogClose = useCallback(() => {
+    setImportDialogOpen(false);
+  }, []);
+
+  // Called from the dialog's "Open Project" CTA. We close the
+  // dialog (the dialog also calls onClose itself, but doing it here
+  // keeps the parent state coherent with the navigation transition)
+  // and forward to the existing onOpenProject handler, which lifts
+  // the route to Session Config in WebRoot.
+  const handleImported = useCallback(
+    (id: string) => {
+      setImportDialogOpen(false);
+      onOpenProject(id);
+    },
+    [onOpenProject],
+  );
 
   return (
     <Container maxWidth="md" className={classes.root} data-testid="tf-welcome">
@@ -444,6 +464,15 @@ export function Welcome({ onOpenProject, onCreateProject }: WelcomeProps): JSX.E
         className={classes.hiddenInput}
         onChange={(e) => {
           void handleRepointFileChange(e);
+        }}
+      />
+
+      <ImportProjectDialog
+        open={importDialogOpen}
+        onClose={handleImportDialogClose}
+        onImported={handleImported}
+        onListShouldRefresh={() => {
+          void fetchProjects();
         }}
       />
     </Container>
