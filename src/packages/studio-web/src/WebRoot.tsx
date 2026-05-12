@@ -21,16 +21,18 @@ import {
 import CssBaseline from "@tf/studio-base/components/CssBaseline";
 import ThemeProvider from "@tf/studio-base/theme/ThemeProvider";
 
+import { CreateProject } from "./screens/CreateProject";
 import { Welcome } from "./screens/Welcome/Welcome";
 import LocalStorageAppConfiguration from "./services/LocalStorageAppConfiguration";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
 // Phase 1 routing is a plain state machine, not React Router — see
-// phase1.md §11.6 and the M3-FE-1 task brief. The Welcome screen runs
-// before SharedRoot is mounted (SharedRoot is part of the cockpit
-// shell), so Welcome needs its own ThemeProvider + CssBaseline wrap.
-type View = "welcome" | "cockpit";
+// phase1.md §11.6 and the M3-FE-1 task brief. The Welcome screen and
+// CreateProject screen run before SharedRoot is mounted (SharedRoot is
+// part of the cockpit shell), so the pre-cockpit screens share a
+// single ThemeProvider + CssBaseline wrap mounted here.
+type View = "welcome" | "create-project" | "cockpit";
 
 export function WebRoot(props: {
   extraProviders: JSX.Element[] | undefined;
@@ -74,11 +76,29 @@ export function WebRoot(props: {
     setView("cockpit");
   }, []);
 
+  const handleGoToCreate = useCallback(() => {
+    setView("create-project");
+  }, []);
+
+  const handleBackToWelcome = useCallback(() => {
+    setView("welcome");
+  }, []);
+
   if (view === "welcome") {
     return (
       <ThemeProvider isDark>
         <CssBaseline>
-          <Welcome onOpenProject={handleOpenProject} />
+          <Welcome onOpenProject={handleOpenProject} onCreateProject={handleGoToCreate} />
+        </CssBaseline>
+      </ThemeProvider>
+    );
+  }
+
+  if (view === "create-project") {
+    return (
+      <ThemeProvider isDark>
+        <CssBaseline>
+          <CreateProject onBack={handleBackToWelcome} />
         </CssBaseline>
       </ThemeProvider>
     );

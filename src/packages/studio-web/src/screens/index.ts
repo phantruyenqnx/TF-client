@@ -20,3 +20,4 @@
 // into WebRoot.tsx yet.
 
 export { Welcome } from "./Welcome";
+export { CreateProject } from "./CreateProject";

@@ -193,9 +193,14 @@ export type WelcomeProps = {
    * (M3-FE-3 Session Config) to consume.
    */
   onOpenProject: (projectId: string) => void;
+  /**
+   * Called when the user clicks "+ Create New Project". WebRoot is
+   * the routing authority and switches to the CreateProject screen.
+   */
+  onCreateProject: () => void;
 };
 
-export function Welcome({ onOpenProject }: WelcomeProps): JSX.Element {
+export function Welcome({ onOpenProject, onCreateProject }: WelcomeProps): JSX.Element {
   const { classes, cx } = useStyles();
   const [projects, setProjects] = useState<ProjectListEntry[] | undefined>(undefined);
   const [loading, setLoading] = useState(true);
@@ -296,9 +301,8 @@ export function Welcome({ onOpenProject }: WelcomeProps): JSX.Element {
   );
 
   const handleCreateClick = useCallback(() => {
-    // M3-FE-2 wires this to the Create Project screen.
-    console.warn("M3-FE-2 not yet implemented");
-  }, []);
+    onCreateProject();
+  }, [onCreateProject]);
 
   const handleImportClick = useCallback(() => {
     // M3-FE-1b wires this to the Import Project dialog.
