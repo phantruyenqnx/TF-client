@@ -23,6 +23,7 @@ import ThemeProvider from "@tf/studio-base/theme/ThemeProvider";
 
 import { CreateProject } from "./screens/CreateProject";
 import { SessionConfig } from "./screens/SessionConfig";
+import { StartingServices } from "./screens/StartingServices";
 import { Welcome } from "./screens/Welcome/Welcome";
 import LocalStorageAppConfiguration from "./services/LocalStorageAppConfiguration";
 
@@ -33,7 +34,7 @@ const isDevelopment = process.env.NODE_ENV === "development";
 // CreateProject screen run before SharedRoot is mounted (SharedRoot is
 // part of the cockpit shell), so the pre-cockpit screens share a
 // single ThemeProvider + CssBaseline wrap mounted here.
-type View = "welcome" | "create-project" | "session-config" | "cockpit";
+type View = "welcome" | "create-project" | "session-config" | "starting-services" | "cockpit";
 
 export function WebRoot(props: {
   extraProviders: JSX.Element[] | undefined;
@@ -70,10 +71,9 @@ export function WebRoot(props: {
   // Project the user picked in Welcome. Consumed by SessionConfig to
   // load /api/v1/projects/{id}/config and POST a new session.
   const [activeProjectId, setActiveProjectId] = useState<string | undefined>(undefined);
-  // session_id from the most recent successful POST /sessions, stored
-  // for M3-FE-4 (Starting Services) to consume. The cockpit itself
-  // does not read it yet.
-  const [, setActiveSessionId] = useState<string | undefined>(undefined);
+  // session_id from the most recent successful POST /sessions. Used
+  // by StartingServices to open the status WebSocket.
+  const [activeSessionId, setActiveSessionId] = useState<string | undefined>(undefined);
 
   // Open on a Welcome row no longer jumps straight to the cockpit —
   // it routes through SessionConfig so the user can review services
@@ -91,8 +91,17 @@ export function WebRoot(props: {
     setView("welcome");
   }, []);
 
+  // Session has been created (POST /sessions returned 201) but its
+  // services have not all reached "running" yet. Route to the
+  // Starting Services screen which subscribes to the status WS.
   const handleSessionStarted = useCallback((sessionId: string) => {
     setActiveSessionId(sessionId);
+    setView("starting-services");
+  }, []);
+
+  // Every reported service is running — the StartingServices screen
+  // hands control to the cockpit.
+  const handleServicesReady = useCallback(() => {
     setView("cockpit");
   }, []);
 
@@ -137,6 +146,31 @@ export function WebRoot(props: {
             projectId={activeProjectId}
             onBack={handleBackToWelcome}
             onSessionStarted={handleSessionStarted}
+          />
+        </CssBaseline>
+      </ThemeProvider>
+    );
+  }
+
+  if (view === "starting-services") {
+    // activeSessionId is set by handleSessionStarted before this view
+    // is entered. Same defensive fallback as session-config.
+    if (activeSessionId == undefined) {
+      return (
+        <ThemeProvider isDark>
+          <CssBaseline>
+            <Welcome onOpenProject={handleOpenProject} onCreateProject={handleGoToCreate} />
+          </CssBaseline>
+        </ThemeProvider>
+      );
+    }
+    return (
+      <ThemeProvider isDark>
+        <CssBaseline>
+          <StartingServices
+            sessionId={activeSessionId}
+            onServicesReady={handleServicesReady}
+            onBack={handleBackToWelcome}
           />
         </CssBaseline>
       </ThemeProvider>
