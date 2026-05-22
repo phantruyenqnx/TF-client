@@ -29,11 +29,16 @@ type SceneManagerInstance = SceneManager;
 
 type Config = {
   websocketUrl: string;
+  sessionId: string;
 };
 
 const DEFAULT_CONFIG: Config = {
   websocketUrl: "ws://localhost:9002",
+  sessionId: "",
 };
+
+// Phase 1 single-port backend (phase1 §3.6, §10).
+const API_BASE = "http://localhost:3000";
 
 const useStyles = makeStyles()((theme) => {
   const isDark = theme.palette.mode === "dark";
@@ -144,6 +149,22 @@ function buildSettingsTree(config: Config): SettingsTreeNodes {
         },
       },
     },
+    session: {
+      // Required for the model-tree right-click "Open SDF in
+      // VSCode" action (M3-FE-8) and for the deferred SDF-backed
+      // inertia / collision overlays (M3-FE-7 Q1). The active
+      // session ID is shown in the TF top bar; paste it here
+      // once per cockpit.
+      label: "Session",
+      fields: {
+        sessionId: {
+          label: "Session ID",
+          input: "string",
+          value: config.sessionId,
+          placeholder: "e.g. 7c1b…",
+        },
+      },
+    },
   };
 }
 
@@ -192,6 +213,7 @@ export function GazeboPanel({ context }: Props): JSX.Element {
     const partial = context.initialState as DeepPartial<Config>;
     return {
       websocketUrl: partial.websocketUrl ?? DEFAULT_CONFIG.websocketUrl,
+      sessionId: partial.sessionId ?? DEFAULT_CONFIG.sessionId,
     };
   });
 
@@ -247,6 +269,14 @@ export function GazeboPanel({ context }: Props): JSX.Element {
   // zero duplicate traffic.
   const axesHelpersRef = useRef<Map<string, THREE.AxesHelper>>(new Map());
 
+  // Absolute filesystem path of the active project, resolved once
+  // per sessionId via two REST hops:
+  //   GET /api/v1/sessions/{sessionId}  -> { project_id, ... }
+  //   GET /api/v1/projects/{project_id} -> { path, ... }
+  // Stored in a ref because only event handlers (right-click ->
+  // Open SDF) read it; a re-render on resolution is unnecessary.
+  const projectRootRef = useRef<string>("");
+
   const settingsActionHandler = useCallback((action: SettingsTreeAction) => {
     if (action.action !== "update") {
       return;
@@ -254,6 +284,8 @@ export function GazeboPanel({ context }: Props): JSX.Element {
     const { path, value } = action.payload;
     if (path[1] === "websocketUrl" && typeof value === "string") {
       setConfig((prev) => ({ ...prev, websocketUrl: value }));
+    } else if (path[1] === "sessionId" && typeof value === "string") {
+      setConfig((prev) => ({ ...prev, sessionId: value.trim() }));
     }
   }, []);
 
@@ -275,6 +307,82 @@ export function GazeboPanel({ context }: Props): JSX.Element {
     });
     saveState(config);
   }, [config, context, saveState, settingsActionHandler]);
+
+  // Resolve the project's filesystem path whenever the user
+  // (re-)pastes a session ID into panel settings. Two REST hops,
+  // fire-and-forget — the ref consumers (Open SDF in VSCode) read
+  // it on right-click and silently no-op while it is still "".
+  useEffect(() => {
+    const sessionId = config.sessionId;
+    if (sessionId === "") {
+      projectRootRef.current = "";
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const sessionRes = await fetch(
+          `${API_BASE}/api/v1/sessions/${encodeURIComponent(sessionId)}`,
+        );
+        if (!sessionRes.ok) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[GazeboPanel] sessions/${sessionId}: HTTP ${sessionRes.status}`,
+          );
+          return;
+        }
+        const sessionBody = (await sessionRes.json()) as {
+          project_id?: string;
+        };
+        const projectId = sessionBody.project_id;
+        if (projectId == undefined || projectId === "" || cancelled) {
+          return;
+        }
+        const projectRes = await fetch(
+          `${API_BASE}/api/v1/projects/${encodeURIComponent(projectId)}`,
+        );
+        if (!projectRes.ok) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[GazeboPanel] projects/${projectId}: HTTP ${projectRes.status}`,
+          );
+          return;
+        }
+        const projectBody = (await projectRes.json()) as { path?: string };
+        if (cancelled) {
+          return;
+        }
+        projectRootRef.current = projectBody.path ?? "";
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn("[GazeboPanel] failed to resolve project root", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [config.sessionId]);
+
+  // Right-click "Open SDF in VSCode". Fire-and-forget per brief:
+  // the vscode:// deep-link is handled (or ignored) by the OS URL
+  // dispatcher. Logged before launch so the DoD verification step
+  // ("verify the path in the browser console") can inspect it.
+  const handleOpenSdf = useCallback((modelName: string) => {
+    const root = projectRootRef.current;
+    if (root === "") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[GazeboPanel] cannot open SDF: project root not resolved " +
+          "(set Session ID in panel settings)",
+      );
+      return;
+    }
+    const sdfPath = `${root}/gazebo/models/${modelName}/model.sdf`;
+    const uri = `vscode://file/${sdfPath}`;
+    // eslint-disable-next-line no-console
+    console.log("[GazeboPanel] opening", uri);
+    window.open(uri, "_blank");
+  }, []);
 
   // Connect / reconnect when the URL or the container element changes
   useEffect(() => {
@@ -862,6 +970,7 @@ export function GazeboPanel({ context }: Props): JSX.Element {
             onToggleModel={handleToggleModel}
             onToggleLink={handleToggleLink}
             onToggleAxes={handleToggleAxes}
+            onOpenSdf={handleOpenSdf}
           />
           <div ref={sceneElementRef} className={classes.sceneContainer} />
         </div>

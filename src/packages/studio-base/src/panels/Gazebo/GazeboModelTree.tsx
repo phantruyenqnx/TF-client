@@ -2,8 +2,14 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { Checkbox, IconButton, Tooltip } from "@mui/material";
-import { useCallback } from "react";
+import {
+  Checkbox,
+  IconButton,
+  Menu,
+  MenuItem,
+  Tooltip,
+} from "@mui/material";
+import { useCallback, useState } from "react";
 import { makeStyles } from "tss-react/mui";
 
 export type LinkInfo = {
@@ -34,6 +40,17 @@ type Props = {
   onToggleModel: (modelName: string) => void;
   onToggleLink: (modelName: string, linkName: string) => void;
   onToggleAxes: (modelName: string, linkName: string, on: boolean) => void;
+  onOpenSdf: (modelName: string) => void;
+};
+
+// Anchor position for the right-click context menu. We track the
+// (x, y) page coordinates rather than an HTMLElement anchor so the
+// menu pops up exactly where the cursor landed — matching the
+// browser-native context-menu UX.
+type ContextMenuState = {
+  x: number;
+  y: number;
+  modelName: string;
 };
 
 const SIDEBAR_WIDTH = 280;
@@ -190,8 +207,13 @@ export function GazeboModelTree(props: Props): JSX.Element {
     onToggleModel,
     onToggleLink,
     onToggleAxes,
+    onOpenSdf,
   } = props;
   const { classes, cx } = useStyles();
+
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | undefined>(
+    undefined,
+  );
 
   const handleAxesChange = useCallback(
     (modelName: string, linkName: string) =>
@@ -200,6 +222,30 @@ export function GazeboModelTree(props: Props): JSX.Element {
       },
     [onToggleAxes],
   );
+
+  // Open the right-click menu for the given model. Used by both
+  // model rows and link rows; the link variant passes its parent
+  // model name so "Open SDF in VSCode" always targets the model
+  // SDF (links don't have standalone SDF files).
+  const handleRowContextMenu = useCallback(
+    (modelName: string) => (event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setContextMenu({ x: event.clientX, y: event.clientY, modelName });
+    },
+    [],
+  );
+
+  const handleContextMenuClose = useCallback(() => {
+    setContextMenu(undefined);
+  }, []);
+
+  const handleOpenSdfClick = useCallback(() => {
+    if (contextMenu != undefined) {
+      onOpenSdf(contextMenu.modelName);
+    }
+    setContextMenu(undefined);
+  }, [contextMenu, onOpenSdf]);
 
   return (
     <div className={cx(classes.sidebar, !open && classes.sidebarCollapsed)}>
@@ -232,6 +278,7 @@ export function GazeboModelTree(props: Props): JSX.Element {
                       onClick={() => {
                         onToggleModel(model.name);
                       }}
+                      onContextMenu={handleRowContextMenu(model.name)}
                     >
                       <span className={classes.chevron}>
                         {isModelOpen ? "▾" : "▸"}
@@ -247,7 +294,10 @@ export function GazeboModelTree(props: Props): JSX.Element {
                         );
                         return (
                           <div key={linkKey}>
-                            <div className={classes.rowLink}>
+                            <div
+                              className={classes.rowLink}
+                              onContextMenu={handleRowContextMenu(model.name)}
+                            >
                               <span
                                 className={classes.chevron}
                                 onClick={() => {
@@ -343,6 +393,29 @@ export function GazeboModelTree(props: Props): JSX.Element {
           </div>
         </>
       )}
+      <Menu
+        open={contextMenu != undefined}
+        onClose={handleContextMenuClose}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu != undefined
+            ? { top: contextMenu.y, left: contextMenu.x }
+            : undefined
+        }
+      >
+        <MenuItem onClick={handleOpenSdfClick}>Open SDF in VSCode</MenuItem>
+        {/*
+          MUI disables pointer events on a disabled MenuItem, which
+          would suppress the Tooltip. Wrap in a <span> so the
+          tooltip's mouse listeners still fire, matching the same
+          pattern used for the disabled overlay checkboxes above.
+        */}
+        <Tooltip title="Requires service hot-reload (coming in M7)">
+          <span>
+            <MenuItem disabled>Reload model</MenuItem>
+          </span>
+        </Tooltip>
+      </Menu>
     </div>
   );
 }
