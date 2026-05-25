@@ -12,6 +12,8 @@ import ThemeProvider from "@tf/studio-base/theme/ThemeProvider";
 
 import { CenterViewport } from "./components/CenterViewport";
 import { GazeboToolbar } from "./components/GazeboToolbar";
+import { LeftPanel } from "./components/LeftPanel";
+import { RightPanel } from "./components/RightPanel";
 import { STUB_STATS } from "./placeholder";
 import type { GazeboConfig } from "./types";
 
@@ -168,18 +170,14 @@ export function GazeboPanel({ context }: Props): JSX.Element {
             transition: `grid-template-columns ${GRID_DURATION} ${GRID_EASING}`,
           }}
         >
-          {/* ── LEFT PANEL (placeholder — replaced in Commit 5) ── */}
+          {/* ── LEFT PANEL ── */}
           <Box
             sx={{
-              bgcolor: "#0d1117",
               borderRight: "1px solid #21262d",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               ...collapsibleSx,
             }}
           >
-            <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>LEFT PANEL</Box>
+            <LeftPanel />
           </Box>
 
           {/*
@@ -218,18 +216,14 @@ export function GazeboPanel({ context }: Props): JSX.Element {
             </Box>
           </Box>
 
-          {/* ── RIGHT PANEL (placeholder — replaced in Commit 6) ── */}
+          {/* ── RIGHT PANEL ── */}
           <Box
             sx={{
-              bgcolor: "#0d1117",
               borderLeft: "1px solid #21262d",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               ...collapsibleSx,
             }}
           >
-            <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>RIGHT PANEL</Box>
+            <RightPanel />
           </Box>
         </Box>
 
