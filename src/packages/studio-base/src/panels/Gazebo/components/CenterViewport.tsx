@@ -50,11 +50,28 @@ const hudSx = {
   lineHeight: 1.6,
 };
 
+// Compress icon — shown on the FAB to signal "exit focus mode"
+function IconCompress(): JSX.Element {
+  return (
+    <svg width="15" height="15" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4">
+      <polyline points="4,1 1,1 1,4" />
+      <polyline points="10,1 13,1 13,4" />
+      <polyline points="13,10 13,13 10,13" />
+      <polyline points="1,10 1,13 4,13" />
+      <line x1="5" y1="5" x2="9" y2="9" />
+      <line x1="9" y1="5" x2="5" y2="9" />
+    </svg>
+  );
+}
+
 type Props = {
   websocketUrl: string;
+  // Focus mode props — used to show/hide the exit FAB and the entry glow
+  focusMode: boolean;
+  onExitFocus: () => void;
 };
 
-export function CenterViewport({ websocketUrl }: Props): JSX.Element {
+export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props): JSX.Element {
   const sceneElementRef = useRef<HTMLDivElement | null>(null);
   const sceneMgrRef = useRef<SceneManager | null>(null);
   const statsTopicNameRef = useRef<string | null>(null);
@@ -162,6 +179,71 @@ export function CenterViewport({ websocketUrl }: Props): JSX.Element {
         ref={sceneElementRef}
         style={{ width: "100%", height: "100%", overflow: "hidden" }}
       />
+
+      {/*
+       * Focus-mode entry glow — an inset box-shadow pulse that fires once
+       * whenever focus mode activates. Rendered conditionally so the animation
+       * re-triggers from scratch every time the user enters focus mode.
+       */}
+      {focusMode && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            zIndex: 1,
+            "@keyframes focusRing": {
+              "0%": { boxShadow: "inset 0 0 0 2px rgba(249,115,22,0)" },
+              "35%": { boxShadow: "inset 0 0 0 2px rgba(249,115,22,.65)" },
+              "100%": { boxShadow: "inset 0 0 0 2px rgba(249,115,22,0)" },
+            },
+            animation: "focusRing .9s ease-out forwards",
+          }}
+        />
+      )}
+
+      {/*
+       * Focus-mode exit FAB — fixed at top-right, always in the DOM.
+       * Spring-bounce entry: cubic-bezier(.34,1.56,.64,1) overshoots slightly.
+       * Delayed 0.15s so it appears after the grid animation has started.
+       */}
+      <Box
+        component="button"
+        onClick={onExitFocus}
+        title="Exit Focus Mode (F or Esc)"
+        sx={{
+          position: "absolute",
+          top: 14,
+          right: 14,
+          zIndex: 500,
+          width: 34,
+          height: 34,
+          borderRadius: "8px",
+          border: "1px solid #30363d",
+          bgcolor: "rgba(13,17,23,.92)",
+          color: "#8b949e",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "'JetBrains Mono', monospace",
+          backdropFilter: "blur(10px)",
+          boxShadow: "0 4px 20px rgba(0,0,0,.6)",
+          // Animated in when focusMode = true, out when false
+          opacity: focusMode ? 1 : 0,
+          pointerEvents: focusMode ? "auto" : "none",
+          transform: focusMode ? "scale(1) rotate(0deg)" : "scale(.5) rotate(90deg)",
+          transition:
+            "opacity .28s ease .15s, transform .28s cubic-bezier(.34,1.56,.64,1) .15s, color .15s ease, border-color .15s ease",
+          "&:hover": {
+            color: "#f97316",
+            borderColor: "#f97316",
+            bgcolor: "rgba(249,115,22,.12)",
+          },
+        }}
+      >
+        <IconCompress />
+      </Box>
 
       {/* ── HUD: selected entity (top-left) ── */}
       <Box sx={{ ...hudSx, top: 12, left: 12, display: "flex", alignItems: "center", gap: 1 }}>

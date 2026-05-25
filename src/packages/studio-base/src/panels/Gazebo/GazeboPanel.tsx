@@ -197,7 +197,11 @@ export function GazeboPanel({ context }: Props): JSX.Element {
             }}
           >
             {/* ── CENTER VIEWPORT ── */}
-            <CenterViewport websocketUrl={config.websocketUrl} />
+            <CenterViewport
+              websocketUrl={config.websocketUrl}
+              focusMode={focusMode}
+              onExitFocus={() => setFocusMode(false)}
+            />
 
             {/* ── BOTTOM PANEL (placeholder — replaced in Commit 7) ── */}
             <Box
