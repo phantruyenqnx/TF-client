@@ -2,7 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { Box } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 
 import type { SceneManager } from "gzweb";
@@ -18,6 +18,9 @@ type GzWorldStats = {
   simTime: GzTimeData | null;
   realTime: GzTimeData | null;
   realtimeFactor: number;
+  iterations: number;
+  fps: number;      // not in world stats topic; 0 until a render-loop hook is added
+  contacts: number; // needs a separate physics topic; 0 for now
 };
 
 function formatGzTime(time: GzTimeData | null): string {
@@ -76,10 +79,15 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
   const sceneMgrRef = useRef<SceneManager | null>(null);
   const statsTopicNameRef = useRef<string | null>(null);
 
+  const [simRunning, setSimRunning] = useState(false);
+
   const [worldStats, setWorldStats] = useState<GzWorldStats>({
     simTime: null,
     realTime: null,
     realtimeFactor: 0,
+    iterations: 0,
+    fps: 0,
+    contacts: 0,
   });
 
   // Connect / reconnect SceneManager whenever the WebSocket URL changes
@@ -115,6 +123,9 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
                     simTime: msg.sim_time ?? null,
                     realTime: msg.real_time ?? null,
                     realtimeFactor: msg.real_time_factor ?? 0,
+                    iterations: msg.iterations ?? 0,
+                    fps: 0,
+                    contacts: 0,
                   });
                 });
                 (sceneMgr as any).subscribeToTopic(statsTopic);
@@ -262,28 +273,91 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
         </Box>
       </Box>
 
-      {/* ── HUD: view cube (top-right) ── */}
-      <Box sx={{ ...hudSx, top: 12, right: 12, p: 0, border: "none", background: "transparent", backdropFilter: "none" }}>
-        <svg width="60" height="60" viewBox="0 0 56 56" fill="none">
-          <polygon
-            points="28,4 52,18 52,38 28,52 4,38 4,18"
-            fill="rgba(22,27,34,.9)"
-            stroke="#30363d"
-            strokeWidth="1.2"
-          />
-          <line x1="28" y1="4" x2="28" y2="52" stroke="#30363d" strokeWidth=".8" />
-          <line x1="4" y1="18" x2="52" y2="38" stroke="#30363d" strokeWidth=".8" />
-          <line x1="4" y1="38" x2="52" y2="18" stroke="#30363d" strokeWidth=".8" />
-          <text x="28" y="14" textAnchor="middle" fontSize="7" fill="#6e7681" fontFamily="JetBrains Mono,monospace">
-            TOP
-          </text>
-          <text x="44" y="34" textAnchor="middle" fontSize="7" fill="#6e7681" fontFamily="JetBrains Mono,monospace">
-            R
-          </text>
-          <text x="12" y="34" textAnchor="middle" fontSize="7" fill="#6e7681" fontFamily="JetBrains Mono,monospace">
-            L
-          </text>
-        </svg>
+      {/* ── HUD: view cube + view controls (top-right) ── */}
+      <Box sx={{ ...hudSx, top: 12, right: 12, p: "8px 10px", minWidth: 110 }}>
+        {/* View cube */}
+        <Box sx={{ display: "flex", justifyContent: "center", mb: "6px" }}>
+          <svg width="60" height="60" viewBox="0 0 56 56" fill="none">
+            <polygon
+              points="28,4 52,18 52,38 28,52 4,38 4,18"
+              fill="rgba(22,27,34,.9)"
+              stroke="#30363d"
+              strokeWidth="1.2"
+            />
+            <line x1="28" y1="4" x2="28" y2="52" stroke="#30363d" strokeWidth=".8" />
+            <line x1="4" y1="18" x2="52" y2="38" stroke="#30363d" strokeWidth=".8" />
+            <line x1="4" y1="38" x2="52" y2="18" stroke="#30363d" strokeWidth=".8" />
+            <text x="28" y="14" textAnchor="middle" fontSize="7" fill="#6e7681" fontFamily="JetBrains Mono,monospace">TOP</text>
+            <text x="44" y="34" textAnchor="middle" fontSize="7" fill="#6e7681" fontFamily="JetBrains Mono,monospace">R</text>
+            <text x="12" y="34" textAnchor="middle" fontSize="7" fill="#6e7681" fontFamily="JetBrains Mono,monospace">L</text>
+          </svg>
+        </Box>
+        {/* View preset buttons — row 1 */}
+        <Box sx={{ display: "flex", gap: "3px", mb: "3px" }}>
+          {[
+            { label: "TOP", title: "Top View" },
+            { label: "FNT", title: "Front View" },
+            { label: "SID", title: "Side View" },
+          ].map(({ label, title }) => (
+            <Tooltip key={label} title={title} placement="bottom" arrow>
+              <Box
+                component="button"
+                sx={{
+                  flex: 1, height: 24, border: "none", borderRadius: "3px",
+                  background: "transparent", color: "#8b949e",
+                  fontSize: 7, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace",
+                  "&:hover": { background: "rgba(255,255,255,.07)", color: "#c9d1d9" },
+                }}
+              >
+                {label}
+              </Box>
+            </Tooltip>
+          ))}
+          <Tooltip title="Home / Reset Camera" placement="bottom" arrow>
+            <Box
+              component="button"
+              sx={{
+                width: 24, height: 24, border: "none", borderRadius: "3px",
+                background: "transparent", color: "#8b949e",
+                fontSize: 11, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                "&:hover": { background: "rgba(255,255,255,.07)", color: "#c9d1d9" },
+              }}
+            >
+              ⌂
+            </Box>
+          </Tooltip>
+        </Box>
+        {/* View preset buttons — row 2 */}
+        <Box sx={{ display: "flex", gap: "3px", alignItems: "center" }}>
+          <Tooltip title="Perspective / Orthographic" placement="bottom" arrow>
+            <Box
+              component="button"
+              sx={{
+                flex: 1, height: 24, border: "none", borderRadius: "3px",
+                background: "transparent", color: "#8b949e",
+                fontSize: 7, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace",
+                "&:hover": { background: "rgba(255,255,255,.07)", color: "#c9d1d9" },
+              }}
+            >
+              P/O
+            </Box>
+          </Tooltip>
+          <Tooltip title="Grid Config" placement="bottom" arrow>
+            <Box
+              component="button"
+              sx={{
+                flex: 1, height: 24, border: "none", borderRadius: "3px",
+                background: "transparent", color: "#8b949e",
+                fontSize: 9, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                "&:hover": { background: "rgba(255,255,255,.07)", color: "#c9d1d9" },
+              }}
+            >
+              ⊞
+            </Box>
+          </Tooltip>
+        </Box>
       </Box>
 
       {/* ── HUD: coordinate axes widget (bottom-left) ── */}
@@ -304,22 +378,120 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
         </svg>
       </Box>
 
+      {/* ── HUD: SIM controls (bottom-center) ── */}
+      <Box
+        sx={{
+          ...hudSx,
+          bottom: 12,
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+          p: "5px 8px",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {/* PLAY / PAUSE toggle */}
+        <Tooltip title={simRunning ? "Pause (Space)" : "Play (Space)"} placement="top" arrow>
+          <Box
+            component="button"
+            onClick={() => { setSimRunning((v) => !v); }}
+            sx={{
+              width: 36, height: 28, border: "none", borderRadius: "4px",
+              background: simRunning
+                ? "linear-gradient(135deg,#f97316,#fb923c)"
+                : "rgba(255,255,255,.06)",
+              color: simRunning ? "#0d1117" : "#c9d1d9",
+              fontSize: 11, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: "'JetBrains Mono', monospace",
+              transition: "background .15s, color .15s",
+              "&:hover": { filter: "brightness(1.12)" },
+            }}
+          >
+            {simRunning ? "❚❚" : "▶"}
+          </Box>
+        </Tooltip>
+        <Tooltip title="Step Forward" placement="top" arrow>
+          <Box
+            component="button"
+            sx={{
+              width: 32, height: 28, border: "none", borderRadius: "4px",
+              background: "rgba(255,255,255,.06)", color: "#8b949e",
+              fontSize: 10, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: "'JetBrains Mono', monospace",
+              "&:hover": { background: "rgba(255,255,255,.10)", color: "#c9d1d9" },
+            }}
+          >
+            ▶|
+          </Box>
+        </Tooltip>
+        <Tooltip title="Reset World" placement="top" arrow>
+          <Box
+            component="button"
+            sx={{
+              width: 32, height: 28, border: "none", borderRadius: "4px",
+              background: "rgba(255,255,255,.06)", color: "#8b949e",
+              fontSize: 13, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              "&:hover": { background: "rgba(255,255,255,.10)", color: "#c9d1d9" },
+            }}
+          >
+            ↺
+          </Box>
+        </Tooltip>
+      </Box>
+
       {/* ── HUD: world control / sim stats (bottom-right) ── */}
-      <Box sx={{ ...hudSx, bottom: 12, right: 12 }}>
-        <Box sx={{ fontSize: 7, color: "#6e7681", letterSpacing: ".8px", mb: "4px" }}>
+      <Box sx={{ ...hudSx, bottom: 12, right: 12, minWidth: 168 }}>
+        <Box sx={{ fontSize: 7, color: "#6e7681", letterSpacing: ".8px", mb: "5px" }}>
           WORLD CONTROL
         </Box>
-        <Box sx={{ color: "#22d3ee" }}>
+        {/* Status row */}
+        <Box sx={{ color: "#22d3ee", mb: "4px" }}>
           ▶ {worldStats.simTime ? "SIM RUNNING" : "CONNECTING…"}
         </Box>
-        <Box sx={{ color: "#22d3ee" }}>
-          SIM &nbsp;{formatGzTime(worldStats.simTime)}
+        {/* ITER + FPS */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, mb: "2px" }}>
+          <Box>
+            <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>ITER</Box>
+            <Box component="span" sx={{ color: "#fb923c", fontWeight: 700 }}>
+              {worldStats.iterations > 0 ? worldStats.iterations.toLocaleString() : "--"}
+            </Box>
+          </Box>
+          <Box>
+            <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>FPS</Box>
+            <Box component="span" sx={{ color: "#a78bfa", fontWeight: 700 }}>
+              {worldStats.fps > 0 ? worldStats.fps.toFixed(1) : "--"}
+            </Box>
+          </Box>
         </Box>
-        <Box sx={{ color: "#22d3ee" }}>
-          REAL {formatGzTime(worldStats.realTime)}
+        {/* SIM TIME */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: "2px" }}>
+          <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>SIM</Box>
+          <Box component="span" sx={{ color: "#22d3ee" }}>{formatGzTime(worldStats.simTime)}</Box>
         </Box>
-        <Box sx={{ color: worldStats.realtimeFactor > 0 ? "#22c55e" : "#6e7681" }}>
-          RTF &nbsp;{worldStats.realtimeFactor > 0 ? worldStats.realtimeFactor.toFixed(3) : "--"}
+        {/* REAL TIME */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: "2px" }}>
+          <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>REAL</Box>
+          <Box component="span" sx={{ color: "#c9d1d9" }}>{formatGzTime(worldStats.realTime)}</Box>
+        </Box>
+        {/* RTF + CONTACTS */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+          <Box>
+            <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>RTF</Box>
+            <Box component="span" sx={{ color: worldStats.realtimeFactor > 0 ? "#22c55e" : "#6e7681", fontWeight: 700 }}>
+              {worldStats.realtimeFactor > 0 ? worldStats.realtimeFactor.toFixed(3) : "--"}
+            </Box>
+          </Box>
+          <Box>
+            <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>CONTACTS</Box>
+            <Box component="span" sx={{ color: "#fb923c", fontWeight: 700 }}>
+              {worldStats.contacts}
+            </Box>
+          </Box>
         </Box>
       </Box>
     </Box>

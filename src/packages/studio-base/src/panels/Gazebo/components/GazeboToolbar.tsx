@@ -3,9 +3,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Box, Tooltip } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
 import { makeStyles } from "tss-react/mui";
-
-import type { WorldStats } from "../types";
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -73,61 +72,6 @@ const useStyles = makeStyles()(() => ({
     "&:hover": {
       color: "#ef4444",
     },
-  },
-  // Play button (larger, orange gradient)
-  ibPlay: {
-    width: 32,
-    height: 28,
-    border: "none",
-    borderRadius: 4,
-    background: "linear-gradient(135deg,#f97316,#fb923c)",
-    color: "#0d1117",
-    fontSize: 11,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    fontFamily: "'JetBrains Mono', monospace",
-    padding: 0,
-    "&:hover": {
-      filter: "brightness(1.1)",
-    },
-  },
-  // Stats strip — right-aligned
-  statsStrip: {
-    marginLeft: "auto",
-    display: "flex",
-    alignItems: "stretch",
-    border: "1px solid #30363d",
-    borderRadius: 5,
-    backgroundColor: "#0d1117",
-    overflow: "hidden",
-    flexShrink: 0,
-    height: 44,
-  },
-  statCell: {
-    padding: "2px 9px",
-    display: "flex",
-    flexDirection: "column" as const,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRight: "1px solid #21262d",
-    "&:last-child": {
-      borderRight: "none",
-    },
-  },
-  statLabel: {
-    fontSize: 7,
-    color: "#6e7681",
-    letterSpacing: ".7px",
-    whiteSpace: "nowrap" as const,
-  },
-  statValue: {
-    fontSize: 10,
-    fontWeight: 700,
-    marginTop: 1,
-    whiteSpace: "nowrap" as const,
   },
 }));
 
@@ -231,28 +175,6 @@ function IconPointLight(): JSX.Element {
   );
 }
 
-function IconHome(): JSX.Element {
-  return (
-    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4">
-      <polyline points="1,6 7,1 13,6" />
-      <polyline points="3,6 3,13 11,13 11,6" />
-      <rect x="5" y="9" width="4" height="4" />
-    </svg>
-  );
-}
-
-function IconGrid(): JSX.Element {
-  return (
-    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4">
-      <rect x="1" y="1" width="12" height="12" />
-      <line x1="1" y1="5" x2="13" y2="5" />
-      <line x1="1" y1="9" x2="13" y2="9" />
-      <line x1="5" y1="1" x2="5" y2="13" />
-      <line x1="9" y1="1" x2="9" y2="13" />
-    </svg>
-  );
-}
-
 function IconWireframe(): JSX.Element {
   return (
     <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4">
@@ -319,136 +241,115 @@ function IconExpand(): JSX.Element {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 type Props = {
-  stats: WorldStats;
-  // focusMode and onToggleFocus are wired in Commit 4; included now for the correct type signature
   focusMode: boolean;
   onToggleFocus: () => void;
 };
 
-export function GazeboToolbar({ stats, focusMode, onToggleFocus }: Props): JSX.Element {
+export function GazeboToolbar({ focusMode, onToggleFocus }: Props): JSX.Element {
   const { classes, cx } = useStyles();
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const groupsRef    = useRef<HTMLDivElement | null>(null);
+  const [availWidth, setAvailWidth] = useState(9999);
+
+  useEffect(() => {
+    const el = groupsRef.current;
+    if (!el) { return; }
+    const ro = new ResizeObserver(([entry]) => {
+      if (entry) { setAvailWidth(entry.contentRect.width); }
+    });
+    ro.observe(el);
+    return () => { ro.disconnect(); };
+  }, []);
+
+  // Thresholds based on measured cumulative group widths (label + buttons + inner gaps)
+  // SIM and VIEW groups moved to CenterViewport HUDs — toolbar now starts with EDIT
+  const showInsert = availWidth >= 420;
+  const showViz    = availWidth >= 660;
+  const showTools  = availWidth >= 820;
+
   return (
-    <div className={classes.toolbar}>
+    <div ref={containerRef} className={classes.toolbar}>
 
-      {/* ── SIMULATION ─────────────────────────────── */}
-      <div className={classes.group}>
-        <GroupLabel text="SIM" />
-        <Tooltip title="Play (Space)" placement="bottom" arrow>
-          <button className={classes.ibPlay}>▶</button>
-        </Tooltip>
-        <IB title="Pause">❚❚</IB>
-        <IB title="Step Forward">▶|</IB>
-        <IB title="Reset World">↺</IB>
-      </div>
-
-      <Sep />
-
-      {/* ── EDIT ───────────────────────────────────── */}
-      <div className={classes.group}>
-        <GroupLabel text="EDIT" />
-        <IB title="Select Mode" active><IconSelect /></IB>
-        <IB title="Translate"><IconTranslate /></IB>
-        <IB title="Rotate"><IconRotate /></IB>
-        <IB title="Scale"><IconScale /></IB>
-        <Box sx={{ width: 1, height: 20, bgcolor: "#30363d", mx: "2px" }} />
-        <IB title="Copy">⬗</IB>
-        <IB title="Paste">⬘</IB>
-      </div>
-
-      <Sep />
-
-      {/* ── INSERT ─────────────────────────────────── */}
-      <div className={classes.group}>
-        <GroupLabel text="INSERT" />
-        <IB title="Spawn Box">■</IB>
-        <IB title="Spawn Sphere">●</IB>
-        <IB title="Spawn Cylinder">⬟</IB>
-        <Box sx={{ width: 1, height: 20, bgcolor: "#30363d", mx: "2px" }} />
-        <IB title="Add Directional Light"><IconDirLight /></IB>
-        <IB title="Add Point Light"><IconPointLight /></IB>
-      </div>
-
-      <Sep />
-
-      {/* ── VIEW ───────────────────────────────────── */}
-      <div className={classes.group}>
-        <GroupLabel text="VIEW" />
-        <IB title="Top View">T</IB>
-        <IB title="Front View">F</IB>
-        <IB title="Side View">S</IB>
-        <IB title="Home / Reset Camera"><IconHome /></IB>
-        <Box sx={{ width: 1, height: 20, bgcolor: "#30363d", mx: "2px" }} />
-        <IB title="Perspective / Orthographic">P/O</IB>
-        <IB title="Grid Config"><IconGrid /></IB>
-      </div>
-
-      <Sep />
-
-      {/* ── VISUALIZE ──────────────────────────────── */}
-      <div className={classes.group}>
-        <GroupLabel text="VIZ" />
-        <IB title="Transparent Mode">□</IB>
-        <IB title="Wireframe"><IconWireframe /></IB>
-        <IB title="Show Joints" active><IconJoints /></IB>
-        <IB title="Show Collisions">▣</IB>
-        <IB title="Show Inertia"><IconInertia /></IB>
-        <IB title="Center of Mass">CoM</IB>
-        <IB title="Show Contacts" active>✦</IB>
-      </div>
-
-      <Sep />
-
-      {/* ── TOOLS ──────────────────────────────────── */}
-      <div className={classes.group}>
-        <GroupLabel text="TOOLS" />
-        <IB title="Screenshot"><IconScreenshot /></IB>
-        <IB title="Record Video"><IconVideo /></IB>
-        <IB title="Tape Measure">↦</IB>
-        <IB title="Shutdown" danger>⏻</IB>
-      </div>
-
-      {/* ── STATS (right-aligned) ───────────────────── */}
-      <div className={classes.statsStrip}>
-        <div className={classes.statCell}>
-          <span className={classes.statLabel}>ITER</span>
-          <span className={cx(classes.statValue)} style={{ color: "#fb923c" }}>
-            {stats.iterations.toLocaleString()}
-          </span>
+      {/*
+       * groups-inner: flex:1 + min-width:0 lets this div shrink below its
+       * content size. overflow:hidden clips groups that no longer fit.
+       * The expand button lives OUTSIDE this div so it is never clipped.
+       */}
+      <div
+        ref={groupsRef}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          overflow: "hidden",
+          height: "100%",
+        }}
+      >
+        {/* ── EDIT ───────────────────────────────────── */}
+        <div className={classes.group}>
+          <GroupLabel text="EDIT" />
+          <IB title="Select Mode" active><IconSelect /></IB>
+          <IB title="Translate"><IconTranslate /></IB>
+          <IB title="Rotate"><IconRotate /></IB>
+          <IB title="Scale"><IconScale /></IB>
+          <Box sx={{ width: 1, height: 20, bgcolor: "#30363d", mx: "2px" }} />
+          <IB title="Copy">⬗</IB>
+          <IB title="Paste">⬘</IB>
         </div>
-        <div className={classes.statCell}>
-          <span className={classes.statLabel}>SIM TIME</span>
-          <span className={cx(classes.statValue)} style={{ color: "#22d3ee" }}>
-            {stats.simTime}
-          </span>
-        </div>
-        <div className={classes.statCell}>
-          <span className={classes.statLabel}>REAL TIME</span>
-          <span className={classes.statValue}>{stats.realTime}</span>
-        </div>
-        <div className={classes.statCell}>
-          <span className={classes.statLabel}>RTF</span>
-          <span className={cx(classes.statValue)} style={{ color: "#22c55e" }}>
-            {stats.rtf.toFixed(3)}
-          </span>
-        </div>
-        <div className={classes.statCell}>
-          <span className={classes.statLabel}>FPS</span>
-          <span className={cx(classes.statValue)} style={{ color: "#a78bfa" }}>
-            {stats.fps.toFixed(1)}
-          </span>
-        </div>
-        <div className={classes.statCell}>
-          <span className={classes.statLabel}>CONTACTS</span>
-          <span className={cx(classes.statValue)} style={{ color: "#fb923c" }}>
-            {stats.contacts}
-          </span>
-        </div>
+
+        {showInsert && (
+          <>
+            <Sep />
+            {/* ── INSERT ─────────────────────────────────── */}
+            <div className={classes.group}>
+              <GroupLabel text="INSERT" />
+              <IB title="Spawn Box">■</IB>
+              <IB title="Spawn Sphere">●</IB>
+              <IB title="Spawn Cylinder">⬟</IB>
+              <Box sx={{ width: 1, height: 20, bgcolor: "#30363d", mx: "2px" }} />
+              <IB title="Add Directional Light"><IconDirLight /></IB>
+              <IB title="Add Point Light"><IconPointLight /></IB>
+            </div>
+          </>
+        )}
+
+        {showViz && (
+          <>
+            <Sep />
+            {/* ── VISUALIZE ──────────────────────────────── */}
+            <div className={classes.group}>
+              <GroupLabel text="VIZ" />
+              <IB title="Transparent Mode">□</IB>
+              <IB title="Wireframe"><IconWireframe /></IB>
+              <IB title="Show Joints" active><IconJoints /></IB>
+              <IB title="Show Collisions">▣</IB>
+              <IB title="Show Inertia"><IconInertia /></IB>
+              <IB title="Center of Mass">CoM</IB>
+              <IB title="Show Contacts" active>✦</IB>
+            </div>
+          </>
+        )}
+
+        {showTools && (
+          <>
+            <Sep />
+            {/* ── TOOLS ──────────────────────────────────── */}
+            <div className={classes.group}>
+              <GroupLabel text="TOOLS" />
+              <IB title="Screenshot"><IconScreenshot /></IB>
+              <IB title="Record Video"><IconVideo /></IB>
+              <IB title="Tape Measure">↦</IB>
+              <IB title="Shutdown" danger>⏻</IB>
+            </div>
+          </>
+        )}
       </div>
 
+      {/* ── Always-visible end — outside the overflow container ── */}
       <Sep />
-
-      {/* ── FOCUS MODE TOGGLE (far-right corner) ──── */}
       <Tooltip title="Focus Mode — hide all panels (F)" placement="bottom" arrow>
         <button
           className={cx(classes.ib, focusMode && classes.ibActive)}

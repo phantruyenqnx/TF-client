@@ -10,11 +10,12 @@ import { SettingsTreeAction, SettingsTreeNodes } from "@tf/studio";
 import type { PanelExtensionContext } from "@tf/studio";
 import ThemeProvider from "@tf/studio-base/theme/ThemeProvider";
 
+import { BottomPanel } from "./components/BottomPanel";
 import { CenterViewport } from "./components/CenterViewport";
 import { GazeboToolbar } from "./components/GazeboToolbar";
 import { LeftPanel } from "./components/LeftPanel";
 import { RightPanel } from "./components/RightPanel";
-import { STUB_STATS } from "./placeholder";
+import { StatusBar } from "./components/StatusBar";
 import type { GazeboConfig } from "./types";
 
 const DEFAULT_CONFIG: GazeboConfig = {
@@ -149,7 +150,6 @@ export function GazeboPanel({ context }: Props): JSX.Element {
         {/* ── TOOLBAR ── */}
         <Box sx={{ ...collapsibleSx, flexShrink: 0 }}>
           <GazeboToolbar
-            stats={STUB_STATS}
             focusMode={focusMode}
             onToggleFocus={() => setFocusMode((v) => !v)}
           />
@@ -201,18 +201,14 @@ export function GazeboPanel({ context }: Props): JSX.Element {
               onExitFocus={() => setFocusMode(false)}
             />
 
-            {/* ── BOTTOM PANEL (placeholder — replaced in Commit 7) ── */}
+            {/* ── BOTTOM PANEL ── */}
             <Box
               sx={{
-                bgcolor: "#0d1117",
                 borderTop: "1px solid #21262d",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 ...collapsibleSx,
               }}
             >
-              <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>BOTTOM PANEL</Box>
+              <BottomPanel />
             </Box>
           </Box>
 
@@ -227,21 +223,16 @@ export function GazeboPanel({ context }: Props): JSX.Element {
           </Box>
         </Box>
 
-        {/* ── STATUS BAR (placeholder — replaced in Commit 7) ── */}
+        {/* ── STATUS BAR ── */}
         <Box
           sx={{
             bgcolor: "#161b22",
             borderTop: "1px solid #21262d",
-            display: "flex",
-            alignItems: "center",
-            px: 1.5,
             flexShrink: 0,
             ...collapsibleSx,
           }}
         >
-          <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>
-            STATUS BAR — placeholder
-          </Box>
+          <StatusBar />
         </Box>
       </Box>
     </ThemeProvider>
