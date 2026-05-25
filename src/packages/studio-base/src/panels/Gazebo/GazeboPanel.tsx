@@ -2,75 +2,21 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { makeStyles } from "tss-react/mui";
+import { Box } from "@mui/material";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { DeepPartial } from "ts-essentials";
 
 import { SettingsTreeAction, SettingsTreeNodes } from "@tf/studio";
-import Stack from "@tf/studio-base/components/Stack";
+import type { PanelExtensionContext } from "@tf/studio";
 import ThemeProvider from "@tf/studio-base/theme/ThemeProvider";
 
-import type { PanelExtensionContext } from "@tf/studio";
-import type { SceneManager } from "gzweb";
+import type { GazeboConfig } from "./types";
 
-type SceneManagerInstance = SceneManager;
-
-type Config = {
-  websocketUrl: string;
-};
-
-const DEFAULT_CONFIG: Config = {
+const DEFAULT_CONFIG: GazeboConfig = {
   websocketUrl: "ws://localhost:9002",
 };
 
-const useStyles = makeStyles()((theme) => {
-  const isDark = theme.palette.mode === "dark";
-  const cardBg = isDark ? "#1c1e2a" : "#ffffff";
-  const textPrimary = isDark ? "#e8eaf6" : "#1a1a2e";
-  const textMuted = isDark ? "#607d8b" : "#9e9e9e";
-  const divider = isDark ? "#2a2d3e" : "#e0e0e0";
-
-  return {
-    statsBar: {
-      backgroundColor: cardBg,
-      borderTop: `1px solid ${divider}`,
-      padding: theme.spacing(0.5, 1),
-      minHeight: "40px",
-      display: "flex",
-      alignItems: "center",
-      gap: theme.spacing(2),
-      flexShrink: 0,
-    },
-    statsCell: {
-      flex: "1 1 120px",
-      padding: theme.spacing(0.5, 0.75),
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      borderRight: `1px solid rgba(128,128,128,0.15)`,
-      minWidth: 0,
-      "&:last-child": {
-        borderRight: "none",
-      },
-    },
-    statsLabel: {
-      fontSize: "9px",
-      color: textMuted,
-      letterSpacing: "0.5px",
-      whiteSpace: "nowrap",
-      textTransform: "uppercase",
-    },
-    statsValue: {
-      fontSize: "13px",
-      fontWeight: 600,
-      color: textPrimary,
-      fontFamily: theme.typography.fontMonospace,
-      whiteSpace: "nowrap",
-    },
-  };
-});
-
-function buildSettingsTree(config: Config): SettingsTreeNodes {
+function buildSettingsTree(config: GazeboConfig): SettingsTreeNodes {
   return {
     general: {
       label: "General",
@@ -86,46 +32,20 @@ function buildSettingsTree(config: Config): SettingsTreeNodes {
   };
 }
 
-type TimeData = {
-  sec: number;
-  nsec: number;
-};
-
-type WorldStats = {
-  simTime: TimeData | null;
-  realTime: TimeData | null;
-  realtimeFactor: number;
-};
-
-function formatTime(time: TimeData | null): string {
-  if (!time) {
-    return "--:--:--.---";
-  }
-
-  const totalSeconds = time.sec + time.nsec / 1e9;
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-  const milliseconds = Math.floor((time.nsec % 1e9) / 1e6);
-
-  if (days > 0) {
-    return `${days}d ${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  }
-
-  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${milliseconds.toString().padStart(3, "0")}`;
-}
-
 type Props = {
   context: PanelExtensionContext;
 };
 
+// Easing curve used for all focus-mode grid transitions
+const GRID_EASING = "cubic-bezier(.4,0,.2,1)";
+const GRID_DURATION = "0.42s";
+const FADE_TRANSITION = "opacity 0.22s ease";
+
 export function GazeboPanel({ context }: Props): JSX.Element {
   const { saveState } = context;
-  const { classes } = useStyles();
 
-  const [config, setConfig] = useState<Config>(() => {
-    const partial = context.initialState as DeepPartial<Config>;
+  const [config, setConfig] = useState<GazeboConfig>(() => {
+    const partial = context.initialState as DeepPartial<GazeboConfig>;
     return {
       websocketUrl: partial.websocketUrl ?? DEFAULT_CONFIG.websocketUrl,
     };
@@ -133,29 +53,25 @@ export function GazeboPanel({ context }: Props): JSX.Element {
 
   const [colorScheme, setColorScheme] = useState<"dark" | "light">("light");
   const [renderDone, setRenderDone] = useState<() => void>(() => () => {});
-  const [worldStats, setWorldStats] = useState<WorldStats>({
-    simTime: null,
-    realTime: null,
-    realtimeFactor: 0,
-  });
 
-  const sceneElementRef = useRef<HTMLDivElement | null>(null);
-  const sceneMgrRef = useRef<SceneManagerInstance | null>(null);
-  const statsTopicNameRef = useRef<string | null>(null);
+  // Focus mode: collapses all panels leaving only the 3D viewport
+  const [focusMode, setFocusMode] = useState(false);
 
-  const settingsActionHandler = useCallback((action: SettingsTreeAction) => {
-    if (action.action !== "update") {
-      return;
-    }
-    const { path, value } = action.payload;
-    if (path[1] === "websocketUrl" && typeof value === "string") {
-      setConfig((prev) => ({ ...prev, websocketUrl: value }));
-    }
-  }, []);
+  const settingsActionHandler = useCallback(
+    (action: SettingsTreeAction) => {
+      if (action.action !== "update") {
+        return;
+      }
+      const { path, value } = action.payload;
+      if (path[1] === "websocketUrl" && typeof value === "string") {
+        setConfig((prev) => ({ ...prev, websocketUrl: value }));
+      }
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
     context.watch("colorScheme");
-
     context.onRender = (renderState, done) => {
       setRenderDone(() => done);
       if (renderState.colorScheme) {
@@ -172,97 +88,22 @@ export function GazeboPanel({ context }: Props): JSX.Element {
     saveState(config);
   }, [config, context, saveState, settingsActionHandler]);
 
-  // Connect / reconnect when the URL or the container element changes
+  // F key toggles focus mode; Escape always exits it
   useEffect(() => {
-    if (!sceneElementRef.current) {
-      return;
-    }
-
-    // Give the container element a stable id for SceneManager to attach to
-    const elementId = "gz-scene-panel";
-    sceneElementRef.current.id = elementId;
-
-    let sceneMgr: SceneManagerInstance;
-
-    // Dynamic import to avoid bundling the heavy lib at top level
-    void import("gzweb").then((gzweb) => {
-      if (!sceneElementRef.current) {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
-      const { SceneManager, Topic } = gzweb as any;
-      sceneMgr = new SceneManager({
-        elementId,
-        websocketUrl: config.websocketUrl,
-      });
-      sceneMgrRef.current = sceneMgr;
-
-      // Subscribe to world stats when the connection is ready
-      const readySub = (sceneMgr as any).getConnectionStatusAsObservable().subscribe((ready: boolean) => {
-        if (ready && sceneMgr) {
-          // Access the transport to get the world name
-          const transport = (sceneMgr as any).transport;
-          if (transport) {
-            const worldName = transport.getWorld();
-            if (worldName) {
-              const statsTopicName = `/world/${worldName}/stats`;
-              const statsTopic = new Topic(
-                statsTopicName,
-                (msg: any) => {
-                  setWorldStats({
-                    simTime: msg.sim_time ?? null,
-                    realTime: msg.real_time ?? null,
-                    realtimeFactor: msg.real_time_factor ?? 0,
-                  });
-                }
-              );
-              (sceneMgr as any).subscribeToTopic(statsTopic);
-              statsTopicNameRef.current = statsTopicName;
-            }
-          }
-        }
-      });
-
-      return () => {
-        readySub.unsubscribe();
-      };
-    });
-
-    return () => {
-      if (statsTopicNameRef.current && sceneMgr) {
-        (sceneMgr as any).unsubscribeFromTopic(statsTopicNameRef.current);
-        statsTopicNameRef.current = null;
+      if (e.key === "f" || e.key === "F") {
+        setFocusMode((v) => !v);
       }
-      if (sceneMgr) {
-        sceneMgr.disconnect();
+      if (e.key === "Escape") {
+        setFocusMode(false);
       }
-      sceneMgrRef.current = null;
     };
-  }, [config.websocketUrl]);
-
-  // Handle panel resize
-  useEffect(() => {
-    const sceneElement = sceneElementRef.current;
-    if (!sceneElement) {
-      return;
-    }
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      const sceneMgr = sceneMgrRef.current;
-      if (sceneMgr && (sceneMgr as any).scene) {
-        // Get the new dimensions from the container
-        const entry = entries[0];
-        if (entry) {
-          const { width, height } = entry.contentRect;
-          // Update the scene size
-          (sceneMgr as any).scene.setSize(width, height);
-        }
-      }
-    });
-
-    resizeObserver.observe(sceneElement);
-
+    window.addEventListener("keydown", handler);
     return () => {
-      resizeObserver.disconnect();
+      window.removeEventListener("keydown", handler);
     };
   }, []);
 
@@ -270,30 +111,160 @@ export function GazeboPanel({ context }: Props): JSX.Element {
     renderDone();
   }, [renderDone]);
 
+  // Shared sx helpers for panels that collapse in focus mode
+  const collapsibleSx = {
+    opacity: focusMode ? 0 : 1,
+    transition: FADE_TRANSITION,
+    pointerEvents: focusMode ? ("none" as const) : ("auto" as const),
+    overflow: "hidden" as const,
+  };
+
   return (
     <ThemeProvider isDark={colorScheme === "dark"}>
-      <Stack fullHeight>
-        <div
-          ref={sceneElementRef}
-          style={{ width: "100%", flex: 1, overflow: "hidden", background: "#000" }}
-        />
-        <div className={classes.statsBar}>
-          <div className={classes.statsCell}>
-            <span className={classes.statsLabel}>SIM TIME</span>
-            <span className={classes.statsValue}>{formatTime(worldStats.simTime)}</span>
-          </div>
-          <div className={classes.statsCell}>
-            <span className={classes.statsLabel}>REAL TIME</span>
-            <span className={classes.statsValue}>{formatTime(worldStats.realTime)}</span>
-          </div>
-          <div className={classes.statsCell}>
-            <span className={classes.statsLabel}>RTF</span>
-            <span className={classes.statsValue}>
-              {worldStats.realtimeFactor > 0 ? worldStats.realtimeFactor.toFixed(2) : "--"}x
-            </span>
-          </div>
-        </div>
-      </Stack>
+      {/*
+       * Root: 3-row grid
+       *   row 0 — toolbar   (56px, collapses to 0px in focus mode)
+       *   row 1 — main area (1fr, always visible)
+       *   row 2 — status bar (28px, collapses to 0px in focus mode)
+       */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateRows: focusMode ? "0px 1fr 0px" : "56px 1fr 28px",
+          height: "100%",
+          minHeight: 0,
+          overflow: "hidden",
+          transition: `grid-template-rows ${GRID_DURATION} ${GRID_EASING}`,
+          bgcolor: "#010409",
+          color: "#c9d1d9",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 11,
+        }}
+      >
+        {/* ── TOOLBAR (placeholder — replaced in Commit 3) ── */}
+        <Box
+          sx={{
+            bgcolor: "#161b22",
+            borderBottom: "1px solid #21262d",
+            display: "flex",
+            alignItems: "center",
+            px: 1,
+            flexShrink: 0,
+            ...collapsibleSx,
+          }}
+        >
+          <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>
+            TOOLBAR — placeholder
+          </Box>
+        </Box>
+
+        {/*
+         * Main area: 3-column grid
+         *   col 0 — left panel  (260px, collapses in focus mode)
+         *   col 1 — center+bottom (1fr)
+         *   col 2 — right panel (268px, collapses in focus mode)
+         */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: focusMode ? "0px 1fr 0px" : "260px 1fr 268px",
+            minHeight: 0,
+            overflow: "hidden",
+            transition: `grid-template-columns ${GRID_DURATION} ${GRID_EASING}`,
+          }}
+        >
+          {/* ── LEFT PANEL (placeholder — replaced in Commit 5) ── */}
+          <Box
+            sx={{
+              bgcolor: "#0d1117",
+              borderRight: "1px solid #21262d",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              ...collapsibleSx,
+            }}
+          >
+            <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>LEFT PANEL</Box>
+          </Box>
+
+          {/*
+           * Center column: 2-row grid
+           *   row 0 — 3D viewport (1fr)
+           *   row 1 — bottom panel (230px, collapses in focus mode)
+           */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateRows: focusMode ? "1fr 0px" : "1fr 230px",
+              minHeight: 0,
+              overflow: "hidden",
+              transition: `grid-template-rows ${GRID_DURATION} ${GRID_EASING}`,
+            }}
+          >
+            {/* ── CENTER VIEWPORT (placeholder — replaced in Commit 2) ── */}
+            <Box
+              sx={{
+                bgcolor: "#030712",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 0,
+                overflow: "hidden",
+                position: "relative",
+              }}
+            >
+              <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>
+                CENTER VIEWPORT — placeholder
+              </Box>
+            </Box>
+
+            {/* ── BOTTOM PANEL (placeholder — replaced in Commit 7) ── */}
+            <Box
+              sx={{
+                bgcolor: "#0d1117",
+                borderTop: "1px solid #21262d",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                ...collapsibleSx,
+              }}
+            >
+              <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>BOTTOM PANEL</Box>
+            </Box>
+          </Box>
+
+          {/* ── RIGHT PANEL (placeholder — replaced in Commit 6) ── */}
+          <Box
+            sx={{
+              bgcolor: "#0d1117",
+              borderLeft: "1px solid #21262d",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              ...collapsibleSx,
+            }}
+          >
+            <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>RIGHT PANEL</Box>
+          </Box>
+        </Box>
+
+        {/* ── STATUS BAR (placeholder — replaced in Commit 7) ── */}
+        <Box
+          sx={{
+            bgcolor: "#161b22",
+            borderTop: "1px solid #21262d",
+            display: "flex",
+            alignItems: "center",
+            px: 1.5,
+            flexShrink: 0,
+            ...collapsibleSx,
+          }}
+        >
+          <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>
+            STATUS BAR — placeholder
+          </Box>
+        </Box>
+      </Box>
     </ThemeProvider>
   );
 }
