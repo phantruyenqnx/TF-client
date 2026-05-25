@@ -170,6 +170,7 @@
   },
   "dependencies": {
     "@tf/sql.js": "npm:@foxglove/sql.js@0.0.4",
-    "gzweb": "file:../../../lib"
+    "gzweb": "file:../../../lib",
+    "three-nebula": "10.0.3"
   }
 }

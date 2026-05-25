@@ -10,6 +10,7 @@ import { SettingsTreeAction, SettingsTreeNodes } from "@tf/studio";
 import type { PanelExtensionContext } from "@tf/studio";
 import ThemeProvider from "@tf/studio-base/theme/ThemeProvider";
 
+import { CenterViewport } from "./components/CenterViewport";
 import type { GazeboConfig } from "./types";
 
 const DEFAULT_CONFIG: GazeboConfig = {
@@ -201,22 +202,8 @@ export function GazeboPanel({ context }: Props): JSX.Element {
               transition: `grid-template-rows ${GRID_DURATION} ${GRID_EASING}`,
             }}
           >
-            {/* ── CENTER VIEWPORT (placeholder — replaced in Commit 2) ── */}
-            <Box
-              sx={{
-                bgcolor: "#030712",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: 0,
-                overflow: "hidden",
-                position: "relative",
-              }}
-            >
-              <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>
-                CENTER VIEWPORT — placeholder
-              </Box>
-            </Box>
+            {/* ── CENTER VIEWPORT ── */}
+            <CenterViewport websocketUrl={config.websocketUrl} />
 
             {/* ── BOTTOM PANEL (placeholder — replaced in Commit 7) ── */}
             <Box

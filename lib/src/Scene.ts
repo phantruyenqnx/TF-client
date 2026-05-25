@@ -3948,7 +3948,7 @@ export class Scene {
             'data:image/png;base64,';
           imageElem.src += window.btoa(binary);
 
-          texture.format = isJPEG ? THREE.RGBFormat : THREE.RGBAFormat;
+          texture.format = THREE.RGBAFormat;
           texture.needsUpdate = true;
           texture.image = imageElem;
 
