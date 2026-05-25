@@ -11,6 +11,8 @@ import type { PanelExtensionContext } from "@tf/studio";
 import ThemeProvider from "@tf/studio-base/theme/ThemeProvider";
 
 import { CenterViewport } from "./components/CenterViewport";
+import { GazeboToolbar } from "./components/GazeboToolbar";
+import { STUB_STATS } from "./placeholder";
 import type { GazeboConfig } from "./types";
 
 const DEFAULT_CONFIG: GazeboConfig = {
@@ -142,21 +144,13 @@ export function GazeboPanel({ context }: Props): JSX.Element {
           fontSize: 11,
         }}
       >
-        {/* ── TOOLBAR (placeholder — replaced in Commit 3) ── */}
-        <Box
-          sx={{
-            bgcolor: "#161b22",
-            borderBottom: "1px solid #21262d",
-            display: "flex",
-            alignItems: "center",
-            px: 1,
-            flexShrink: 0,
-            ...collapsibleSx,
-          }}
-        >
-          <Box sx={{ color: "#6e7681", fontSize: 10, letterSpacing: 1 }}>
-            TOOLBAR — placeholder
-          </Box>
+        {/* ── TOOLBAR ── */}
+        <Box sx={{ ...collapsibleSx, flexShrink: 0 }}>
+          <GazeboToolbar
+            stats={STUB_STATS}
+            focusMode={focusMode}
+            onToggleFocus={() => setFocusMode((v) => !v)}
+          />
         </Box>
 
         {/*
