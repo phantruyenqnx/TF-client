@@ -176,9 +176,9 @@ export class Transport {
   public subscribe(topic: Topic): void {
     this.topicMap.set(topic.name, topic);
 
-    const publisher = this.availableTopics.filter(pub => pub['topic'] === topic.name)[0];
-    if (publisher['msg_type'] === 'ignition.msgs.Image' ||
-        publisher['msg_type'] === 'gazebo.msgs.Image') {
+    const publisher: any = this.availableTopics.filter((pub: any) => pub['topic'] === topic.name)[0];
+    if (publisher?.['msg_type'] === 'ignition.msgs.Image' ||
+        publisher?.['msg_type'] === 'gazebo.msgs.Image') {
       this.sendMessage(['image', topic.name, '', '']);
     }
     else {

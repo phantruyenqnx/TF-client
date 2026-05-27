@@ -408,13 +408,18 @@ export class SceneManager {
         this.scene.add(lightObj);
       });
 
-      // Set the ambient color, if present
+      // Set the ambient color, if present.
+      // Three.js AmbientLight adds color flat to all surfaces (unlike Ogre3D
+      // which multiplies by per-material ambient). Strong hues (e.g. baylands
+      // 0.8 0.5 1.0) tint the entire scene purple. Convert to neutral grey
+      // at capped luminance so the fill light looks natural with no color cast.
       if (sceneInfo['ambient'] !== undefined &&
           sceneInfo['ambient'] !== null) {
-        this.scene.ambient.color = new THREE.Color(
-          sceneInfo['ambient']['r'],
-          sceneInfo['ambient']['g'],
-          sceneInfo['ambient']['b']);
+        const r = sceneInfo['ambient']['r'] ?? 0;
+        const g = sceneInfo['ambient']['g'] ?? 0;
+        const b = sceneInfo['ambient']['b'] ?? 0;
+        const lum = Math.min(0.2126 * r + 0.7152 * g + 0.0722 * b, 0.3) * 0.4;
+        this.scene.ambient.color = new THREE.Color(lum, lum, lum);
       }
     });
   }

@@ -1450,6 +1450,28 @@ export class SDFParser {
       });
     }
 
+    // Parse world <scene> sub-elements (ambient, background, fog, grid, sky)
+    if (sdfObj.world.scene) {
+      const s = sdfObj.world.scene;
+      if (s.ambient)    this.scene.setAmbient(this.parseColor(s.ambient));
+      if (s.background) this.scene.setBackground(this.parseColor(s.background));
+      if (s.fog) {
+        const c = this.parseColor(s.fog.color ?? '0.9 0.9 0.9 1');
+        this.scene.addFog(new THREE.Color(c.r, c.g, c.b).getHex(),
+                          parseFloat(s.fog.density ?? '0.001'));
+      }
+      if (s.grid !== undefined) {
+        (this.scene as any).grid.visible = this.parseBool(String(s.grid));
+      }
+      if (s.sky) this.scene.addSky();
+    }
+
+    // Parse world <wind>
+    if (sdfObj.world.wind) {
+      const vel = this.parse3DVector(sdfObj.world.wind.linear_velocity ?? '0 0 0');
+      (this.scene as any).scene.userData.wind = { velocity: vel };
+    }
+
     return worldObj;
   }
 

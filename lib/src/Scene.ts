@@ -484,7 +484,7 @@ export class Scene {
     // an animation loop is required with damping
     this.controls.enableDamping = false;
     this.controls.screenSpacePanning = true;
-
+    
     // Bounding Box
     var indices = new Uint16Array(
         [ 0, 1, 1, 2, 2, 3, 3, 0,
@@ -818,6 +818,15 @@ export class Scene {
     if (changeBackground === true) {
       this.scene.background = new THREE.Color(color);
     }
+  }
+
+  public setAmbient(color: Color): void {
+    this.ambient.color.setRGB(color.r, color.g, color.b);
+  }
+
+  public setBackground(color: Color): void {
+    this.backgroundColor.setRGB(color.r, color.g, color.b);
+    this.scene.background = new THREE.Color(color.r, color.g, color.b);
   }
 
   public initScene(): void {
