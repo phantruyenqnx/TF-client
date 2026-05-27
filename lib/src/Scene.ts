@@ -2416,6 +2416,13 @@ export class Scene {
             maps.push(metalnessMap);
           }
 
+          if (material.pbr.metalness !== undefined) {
+            (obj.material as THREE.MeshStandardMaterial).metalness = material.pbr.metalness;
+          }
+          if (material.pbr.roughness !== undefined) {
+            (obj.material as THREE.MeshStandardMaterial).roughness = material.pbr.roughness;
+          }
+
           maps.forEach(function(map) {
             map.wrapS = map.wrapT = THREE.RepeatWrapping;
             map.repeat.x = 1.0;
