@@ -1878,6 +1878,10 @@ export class SDFParser {
       .addEmitter(nebulaEmitter)
       .emit({ onStart: () => {}, onUpdate: () => {}, onEnd: () => {}});
 
+    particleEmitterObj.userData.nebulaEmitter = nebulaEmitter;
+    particleEmitterObj.name = emitterName;
+    this.scene.setPose(particleEmitterObj, pose.position, pose.orientation);
+
     return particleEmitterObj;
   }
 
