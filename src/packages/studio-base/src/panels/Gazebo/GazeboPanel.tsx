@@ -61,7 +61,7 @@ export function GazeboPanel({ context }: Props): JSX.Element {
   const [renderDone, setRenderDone] = useState<() => void>(() => () => {});
 
   // Focus mode: collapses all panels leaving only the 3D viewport
-  const [focusMode, setFocusMode] = useState(false);
+  const [focusMode, setFocusMode] = useState(true);
 
   const settingsActionHandler = useCallback(
     (action: SettingsTreeAction) => {

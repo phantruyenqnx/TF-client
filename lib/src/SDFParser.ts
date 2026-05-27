@@ -1789,8 +1789,8 @@ export class SDFParser {
 
     // Material
     const particleMaterial = extractValue('material');
-    const particleTextureUrl = particleMaterial.pbr.albedo_map;
-    const particleTexture = this.scene.loadTexture(particleTextureUrl);
+    const particleTextureUrl = particleMaterial?.pbr?.albedo_map ?? '';
+    const particleTexture = particleTextureUrl ? this.scene.loadTexture(particleTextureUrl) : null;
 
     // Create a Nebula Emitter.
     const nebulaEmitter = new Emitter();

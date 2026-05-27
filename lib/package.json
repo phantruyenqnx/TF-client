@@ -26,7 +26,8 @@
   ],
   "scripts": {
     "test": "jest",
-    "build": "rimraf dist && tsc && rollup -c"
+    "build": "rimraf dist && tsc && rollup -c",
+    "postbuild": "cp -r dist/* ../src/node_modules/gzweb/dist/"
   },
   "dependencies": {
     "eventemitter2": "^6.4.5",
