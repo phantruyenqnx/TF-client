@@ -386,6 +386,11 @@ export class Scene {
     this.renderer.autoClear = false;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // sRGB output encoding: ColladaLoader marks diffuse textures as sRGBEncoding (decoded
+    // to linear before lighting); without this the re-encoding to display is skipped and
+    // those textures appear very dark. Ogre2 (Gazebo) also outputs sRGB. r141 default is
+    // LinearEncoding, so this must be set explicitly.
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
     // Particle group to render.
 
     // Add a default ambient value. This is equivalent to
@@ -1819,6 +1824,8 @@ export class Scene {
       for (let t = 0; t < textures.length; ++t) {
         const diffuseUri = createFuelUri(textures[t].diffuse);
         texturesLoaded[t] = this.loadTexture(diffuseUri);
+        texturesLoaded[t].encoding = THREE.sRGBEncoding;
+        texturesLoaded[t].needsUpdate = true;
         configTexture(texturesLoaded[t], new THREE.Vector2(
           width/textures[t].size, height/textures[t].size)
         );
@@ -2368,6 +2375,10 @@ export class Scene {
 
           if (material.pbr.albedoMap) {
             let albedoMap = this.loadTexture(material.pbr.albedoMap);
+            // Color textures are sRGB files; mark so the GPU decodes them to
+            // linear before lighting when outputEncoding=sRGBEncoding is set.
+            albedoMap.encoding = THREE.sRGBEncoding;
+            albedoMap.needsUpdate = true;
             (obj.material as any).map = albedoMap;
             maps.push(albedoMap);
 
@@ -2379,18 +2390,22 @@ export class Scene {
 
           if (material.pbr.normalMap) {
             let normalMap = this.loadTexture(material.pbr.normalMap);
+            // Normal maps are linear data — keep LinearEncoding (default).
             (obj.material as any).normalMap = normalMap;
             maps.push(normalMap);
           }
 
           if (material.pbr.emissiveMap) {
             let emissiveMap = this.loadTexture(material.pbr.emissiveMap);
+            emissiveMap.encoding = THREE.sRGBEncoding;
+            emissiveMap.needsUpdate = true;
             (obj.material as any).emissiveMap = emissiveMap;
             maps.push(emissiveMap);
           }
 
           if (material.pbr.roughnessMap) {
             let roughnessMap = this.loadTexture(material.pbr.roughnessMap);
+            // Roughness/metalness maps are linear data — keep LinearEncoding.
             (obj.material as any).roughnessMap = roughnessMap;
             maps.push(roughnessMap);
           }
@@ -2421,6 +2436,8 @@ export class Scene {
           if (material.texture)
           {
             let texture = this.loadTexture(material.texture);
+            texture.encoding = THREE.sRGBEncoding;
+            texture.needsUpdate = true;
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.x = 1.0;
             texture.repeat.y = 1.0;

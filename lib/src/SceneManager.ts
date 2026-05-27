@@ -375,7 +375,8 @@ export class SceneManager {
         return;
       }
 
-      if ('sky' in sceneInfo && sceneInfo['sky']) {
+      const hasSky = 'sky' in sceneInfo && sceneInfo['sky'];
+      if (hasSky) {
         const sky = sceneInfo['sky'];
 
         // Check to see if a cubemap has been specified in the header.
@@ -391,6 +392,21 @@ export class SceneManager {
           this.scene.addSky();
         }
       }
+
+      // Apply background color when there is no sky. The background field is
+      // part of the Scene proto (field 4) and holds the flat background color
+      // specified in the world SDF <scene><background> tag.
+      if (!hasSky && sceneInfo['background'] !== undefined &&
+          sceneInfo['background'] !== null) {
+        const bg = sceneInfo['background'];
+        this.scene.setBackground({
+          r: bg['r'] ?? 0.7,
+          g: bg['g'] ?? 0.7,
+          b: bg['b'] ?? 0.7,
+          a: bg['a'] ?? 1,
+        });
+      }
+
       this.sceneInfo = sceneInfo;
       this.startVisualization();
 
@@ -408,18 +424,13 @@ export class SceneManager {
         this.scene.add(lightObj);
       });
 
-      // Set the ambient color, if present.
-      // Three.js AmbientLight adds color flat to all surfaces (unlike Ogre3D
-      // which multiplies by per-material ambient). Strong hues (e.g. baylands
-      // 0.8 0.5 1.0) tint the entire scene purple. Convert to neutral grey
-      // at capped luminance so the fill light looks natural with no color cast.
+      // Set the ambient color, if present
       if (sceneInfo['ambient'] !== undefined &&
           sceneInfo['ambient'] !== null) {
-        const r = sceneInfo['ambient']['r'] ?? 0;
-        const g = sceneInfo['ambient']['g'] ?? 0;
-        const b = sceneInfo['ambient']['b'] ?? 0;
-        const lum = Math.min(0.2126 * r + 0.7152 * g + 0.0722 * b, 0.3) * 0.4;
-        this.scene.ambient.color = new THREE.Color(lum, lum, lum);
+        this.scene.ambient.color = new THREE.Color(
+          sceneInfo['ambient']['r'],
+          sceneInfo['ambient']['g'],
+          sceneInfo['ambient']['b']);
       }
     });
   }
