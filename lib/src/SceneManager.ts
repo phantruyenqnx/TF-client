@@ -260,6 +260,73 @@ export class SceneManager {
     }
   }
 
+  /**
+   * Set camera to a standard orthogonal view direction.
+   * Distance is preserved relative to the current orbit target.
+   */
+  public setCameraView(direction: 'top' | 'front' | 'side'): void {
+    if (!this.scene) { return; }
+    const cam = this.scene.camera;
+    const controls = (this.scene as any).controls;
+    const target = controls ? controls.target.clone() : new THREE.Vector3();
+    const dist = cam.position.distanceTo(target) || 10;
+    switch (direction) {
+      case 'top':
+        cam.position.set(target.x, target.y, target.z + dist);
+        cam.up.set(0, 1, 0);
+        break;
+      case 'front':
+        cam.position.set(target.x + dist, target.y, target.z);
+        cam.up.set(0, 0, 1);
+        break;
+      case 'side':
+        cam.position.set(target.x, target.y + dist, target.z);
+        cam.up.set(0, 0, 1);
+        break;
+    }
+    cam.lookAt(target);
+    cam.updateMatrixWorld();
+    if (controls) { controls.update(); }
+  }
+
+  public toggleGrid(): boolean {
+    if (!this.scene) { return false; }
+    const grid = (this.scene as any).grid;
+    if (!grid) { return false; }
+    grid.visible = !grid.visible;
+    return grid.visible;
+  }
+
+  private _perspCamStore: THREE.PerspectiveCamera | null = null;
+
+  public toggleOrtho(): boolean {
+    if (!this.scene) { return false; }
+    const controls = (this.scene as any).controls;
+    if (!this._perspCamStore) {
+      const perspCam = this.scene.camera as THREE.PerspectiveCamera;
+      this._perspCamStore = perspCam;
+      const target = controls ? controls.target.clone() : new THREE.Vector3();
+      const dist = perspCam.position.distanceTo(target);
+      const halfH = dist * Math.tan(THREE.MathUtils.degToRad(perspCam.fov / 2));
+      const halfW = halfH * perspCam.aspect;
+      const orthoCam = new THREE.OrthographicCamera(
+        -halfW, halfW, halfH, -halfH, perspCam.near, perspCam.far
+      );
+      orthoCam.position.copy(perspCam.position);
+      orthoCam.quaternion.copy(perspCam.quaternion);
+      orthoCam.up.copy(perspCam.up);
+      orthoCam.updateMatrixWorld();
+      this.scene.camera = orthoCam as any;
+      if (controls) { controls.object = orthoCam; controls.update(); }
+      return true;
+    } else {
+      this.scene.camera = this._perspCamStore;
+      if (controls) { controls.object = this._perspCamStore; controls.update(); }
+      this._perspCamStore = null;
+      return false;
+    }
+  }
+
   public follow(entityName: string): void {
     if (this.scene) {
       this.scene.emitter.emit('follow_entity', entityName);
@@ -519,7 +586,7 @@ export class SceneManager {
     this.transport.requestService(
       `/world/${this.transport.getWorld()}/control`,
       'gz.msgs.WorldControl',
-      { reset: { all: true } }
+      { reset: { model_only: true, time_only: true } }
     );
   }
 

@@ -80,6 +80,8 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
   const statsTopicNameRef = useRef<string | null>(null);
 
   const [simRunning, setSimRunning] = useState(false);
+  const [isOrtho, setIsOrtho] = useState(false);
+  const [gridVisible, setGridVisible] = useState(false);
 
   const [worldStats, setWorldStats] = useState<GzWorldStats>({
     simTime: null,
@@ -297,14 +299,14 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
         </Box>
         {/* View preset buttons — row 1 */}
         <Box sx={{ display: "flex", gap: "3px", mb: "3px" }}>
-          {[
-            { label: "TOP", title: "Top View" },
-            { label: "FNT", title: "Front View" },
-            { label: "SID", title: "Side View" },
-          ].map(({ label, title }) => (
+          {([ { label: "TOP", dir: "top" as const, title: "Top View" },
+               { label: "FNT", dir: "front" as const, title: "Front View" },
+               { label: "SID", dir: "side" as const, title: "Side View" },
+          ]).map(({ label, dir, title }) => (
             <Tooltip key={label} title={title} placement="bottom" arrow>
               <Box
                 component="button"
+                onClick={() => { sceneMgrRef.current?.setCameraView(dir); }}
                 sx={{
                   flex: 1, height: 24, border: "none", borderRadius: "3px",
                   background: "transparent", color: "#8b949e",
@@ -319,6 +321,7 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
           <Tooltip title="Home / Reset Camera" placement="bottom" arrow>
             <Box
               component="button"
+              onClick={() => { sceneMgrRef.current?.resetView(); }}
               sx={{
                 width: 24, height: 24, border: "none", borderRadius: "3px",
                 background: "transparent", color: "#8b949e",
@@ -336,9 +339,11 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
           <Tooltip title="Perspective / Orthographic" placement="bottom" arrow>
             <Box
               component="button"
+              onClick={() => { const next = sceneMgrRef.current?.toggleOrtho() ?? false; setIsOrtho(next); }}
               sx={{
                 flex: 1, height: 24, border: "none", borderRadius: "3px",
-                background: "transparent", color: "#8b949e",
+                background: isOrtho ? "rgba(249,115,22,.20)" : "transparent",
+                color: isOrtho ? "#f97316" : "#8b949e",
                 fontSize: 7, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace",
                 "&:hover": { background: "rgba(255,255,255,.07)", color: "#c9d1d9" },
               }}
@@ -346,12 +351,14 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
               P/O
             </Box>
           </Tooltip>
-          <Tooltip title="Grid Config" placement="bottom" arrow>
+          <Tooltip title="Toggle Grid" placement="bottom" arrow>
             <Box
               component="button"
+              onClick={() => { const next = sceneMgrRef.current?.toggleGrid() ?? false; setGridVisible(next); }}
               sx={{
                 flex: 1, height: 24, border: "none", borderRadius: "3px",
-                background: "transparent", color: "#8b949e",
+                background: gridVisible ? "rgba(249,115,22,.20)" : "transparent",
+                color: gridVisible ? "#f97316" : "#8b949e",
                 fontSize: 9, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 "&:hover": { background: "rgba(255,255,255,.07)", color: "#c9d1d9" },

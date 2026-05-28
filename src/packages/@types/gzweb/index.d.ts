@@ -30,6 +30,9 @@ declare module "gzweb" {
     disconnect(): void;
     resize(): void;
     resetView(): void;
+    setCameraView(direction: 'top' | 'front' | 'side'): void;
+    toggleGrid(): boolean;
+    toggleOrtho(): boolean;
     snapshot(): void;
     select(name: string): void;
     follow(name: string | null): void;
