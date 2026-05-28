@@ -463,6 +463,23 @@ export class SceneManager {
   }
 
   /**
+   * Subscribe to a camera image topic.
+   * Transport detects ignition.msgs.Image and delivers raw PNG bytes directly.
+   *
+   * @param topic The camera image topic name.
+   * @param onFrame Called with PNG bytes for each frame.
+   */
+  public subscribeToCameraFeed(
+    topic: string,
+    onFrame: (pngBytes: Uint8Array) => void
+  ): void {
+    this.transport.subscribe(new Topic(topic, (raw: any) => {
+      if (raw instanceof Uint8Array) onFrame(raw);
+      else if (raw instanceof ArrayBuffer) onFrame(new Uint8Array(raw));
+    }));
+  }
+
+  /**
    * Play the Simulation.
    */
   public play(): void {
@@ -485,6 +502,28 @@ export class SceneManager {
   }
 
   /**
+   * Step the simulation by a number of steps.
+   */
+  public step(steps: number = 1): void {
+    this.transport.requestService(
+      `/world/${this.transport.getWorld()}/control`,
+      'ignition.msgs.WorldControl',
+      { multi_step: steps }
+    );
+  }
+
+  /**
+   * Reset the simulation.
+   */
+  public reset(): void {
+    this.transport.requestService(
+      `/world/${this.transport.getWorld()}/control`,
+      'ignition.msgs.WorldControl',
+      { reset: { all: true } }
+    );
+  }
+
+  /**
    * Stop the Simulation.
    */
   public stop(): void {
@@ -492,6 +531,39 @@ export class SceneManager {
       '/server_control',
       'ignition.msgs.ServerControl',
       {stop: true}
+    );
+  }
+
+  /**
+   * Spawn a model from an inline SDF string.
+   */
+  public spawnModel(sdfString: string, pose?: {x: number; y: number; z: number}): void {
+    this.transport.requestService(
+      `/world/${this.transport.getWorld()}/create`,
+      'ignition.msgs.EntityFactory',
+      { sdf: sdfString, ...(pose ? { pose: { position: pose } } : {}) }
+    );
+  }
+
+  /**
+   * Spawn a model by model:// URI (server resolves the SDF).
+   */
+  public spawnModelByUri(uri: string, name: string): void {
+    this.transport.requestService(
+      `/world/${this.transport.getWorld()}/create`,
+      'ignition.msgs.EntityFactory',
+      { sdf_filename: uri, name }
+    );
+  }
+
+  /**
+   * Remove a model by name.
+   */
+  public removeModel(name: string): void {
+    this.transport.requestService(
+      `/world/${this.transport.getWorld()}/remove`,
+      'ignition.msgs.Entity',
+      { name, type: 2 }
     );
   }
 
