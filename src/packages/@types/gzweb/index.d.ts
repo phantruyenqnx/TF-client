@@ -54,5 +54,6 @@ declare module "gzweb" {
     spawnModelByUri(uri: string, name: string): void;
     removeModel(name: string): void;
     publish(): void;
+    onModelSelect: ((name: string | null) => void) | null;
   }
 }

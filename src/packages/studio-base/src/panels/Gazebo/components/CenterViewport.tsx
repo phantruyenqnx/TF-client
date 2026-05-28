@@ -82,6 +82,9 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
   const [simRunning, setSimRunning] = useState(false);
   const [isOrtho, setIsOrtho] = useState(false);
   const [gridVisible, setGridVisible] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{
+    name: string; linkCount: number;
+  } | null>(null);
 
   const [worldStats, setWorldStats] = useState<GzWorldStats>({
     simTime: null,
@@ -110,6 +113,18 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
       const { SceneManager, Topic } = gzweb as any;
       sceneMgr = new SceneManager({ elementId, websocketUrl }) as SceneManager;
       sceneMgrRef.current = sceneMgr;
+
+      sceneMgr.onModelSelect = (name: string | null) => {
+        if (!name) { setSelectedEntity(null); return; }
+        const scene = (sceneMgrRef.current as any)?.scene;
+        const obj = scene?.getByName(name);
+        const protoModels: any[] = sceneMgrRef.current?.getModels() ?? [];
+        const protoModel = protoModels.find(
+          (m: any) => m.gz3dName === name || m.name === name
+        );
+        const linkCount = (protoModel?.link ?? obj?.children ?? []).length;
+        setSelectedEntity({ name, linkCount });
+      };
 
       const readySub = (sceneMgr as any)
         .getConnectionStatusAsObservable()
@@ -294,13 +309,19 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
             width: 7,
             height: 7,
             borderRadius: "50%",
-            bgcolor: "#f97316",
+            bgcolor: selectedEntity ? "#f97316" : "#30363d",
             flexShrink: 0,
           }}
         />
         <Box>
-          <Box sx={{ color: "#fb923c", fontWeight: 700, fontSize: 10 }}>x500</Box>
-          <Box sx={{ color: "#6e7681", fontSize: 8 }}>model · 9 links · 4 joints</Box>
+          <Box sx={{ color: "#fb923c", fontWeight: 700, fontSize: 10 }}>
+            {selectedEntity?.name ?? "—"}
+          </Box>
+          <Box sx={{ color: "#6e7681", fontSize: 8 }}>
+            {selectedEntity
+              ? `model · ${selectedEntity.linkCount} links`
+              : "click model to select"}
+          </Box>
         </Box>
       </Box>
 

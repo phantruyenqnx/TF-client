@@ -918,10 +918,11 @@ export class Scene {
       {
         if (mainPointer && model.parent === this.scene)
         {
-          //this.selectEntity(model);
+          this.selectEntity(model);
         }
       }
       // Manipulator pickers, for mouse
+      // (else kept for completeness)
       /*else if (this.modelManipulator.hovered)
       {
         this.modelManipulator.update();
@@ -933,10 +934,10 @@ export class Scene {
         // this.timeDown = new Date().getTime();
       }
     }
-    // Plane from below, for example
+    // No model hit — deselect
     else
     {
-      // this.timeDown = new Date().getTime();
+      if (mainPointer) { this.selectEntity(null); }
     }
   }
 
@@ -2880,7 +2881,7 @@ export class Scene {
     var modelRotation = new THREE.Matrix4();
     modelRotation.extractRotation(model.matrixWorld);
     var modelInverse = new THREE.Matrix4();
-    modelInverse.getInverse(modelRotation);
+    modelInverse.copy(modelRotation).invert();
     this.boundingBox.quaternion.setFromRotationMatrix(modelInverse);
     this.boundingBox.name = 'boundingBox';
     this.boundingBox.visible = true;
@@ -3158,10 +3159,10 @@ export class Scene {
           if (model.joint[j].axis1.use_parent_model_frame)
           {
             tempMatrix.extractRotation(jointVisual.matrix);
-            tempMatrix.getInverse(tempMatrix);
+            tempMatrix.invert();
             direction.applyMatrix4(tempMatrix);
             tempMatrix.extractRotation(child.matrix);
-            tempMatrix.getInverse(tempMatrix);
+            tempMatrix.invert();
             direction.applyMatrix4(tempMatrix);
           }
 
@@ -3187,10 +3188,10 @@ export class Scene {
           if (model.joint[j].axis2.use_parent_model_frame)
           {
             tempMatrix.extractRotation(jointVisual.matrix);
-            tempMatrix.getInverse(tempMatrix);
+            tempMatrix.invert();
             direction.applyMatrix4(tempMatrix);
             tempMatrix.extractRotation(child.matrix);
-            tempMatrix.getInverse(tempMatrix);
+            tempMatrix.invert();
             direction.applyMatrix4(tempMatrix);
           }
 
@@ -3320,7 +3321,7 @@ export class Scene {
 
           // Align link with world (reverse parent rotation w.r.t. the world)
           child.setRotationFromMatrix(
-            new THREE.Matrix4().getInverse(child.parent.matrixWorld));
+            new THREE.Matrix4().copy(child.parent.matrixWorld).invert());
 
           // Get its bounding box
           box = new THREE.Box3();
@@ -3332,7 +3333,7 @@ export class Scene {
 
           // w.r.t child
           var worldToLocal = new THREE.Matrix4();
-          worldToLocal.getInverse(child.matrixWorld);
+          worldToLocal.copy(child.matrixWorld).invert();
           box.applyMatrix4(worldToLocal);
 
           // X

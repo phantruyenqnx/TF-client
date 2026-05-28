@@ -169,6 +169,12 @@ export class SceneManager {
   private enableLights: boolean = true;
 
   /**
+   * Called whenever the user selects or deselects a model in the 3D scene.
+   * Receives the model name, or null when deselected.
+   */
+  public onModelSelect: ((name: string | null) => void) | null = null;
+
+  /**
    * Constructor. If a url is specified, then then SceneManager will connect
    * to the specified websocket server. Otherwise, the `connect` function
    * should be called after construction.
@@ -768,6 +774,10 @@ export class SceneManager {
     this.sceneElement.appendChild(this.scene.renderer.domElement);
 
     this.scene.setSize(this.sceneElement.clientWidth, this.sceneElement.clientHeight);
+
+    const emitter = (this.scene as any).emitter;
+    emitter.on('setTreeSelected', (name: string) => { this.onModelSelect?.(name); });
+    emitter.on('setTreeDeselected', () => { this.onModelSelect?.(null); });
   }
 
   /**
