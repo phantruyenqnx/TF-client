@@ -19,9 +19,25 @@ type GzWorldStats = {
   realTime: GzTimeData | null;
   realtimeFactor: number;
   iterations: number;
-  fps: number;      // not in world stats topic; 0 until a render-loop hook is added
-  contacts: number; // needs a separate physics topic; 0 for now
 };
+
+// Rotate vector v by the conjugate (= inverse) of unit quaternion q.
+// Used to project world-space axes into camera view space.
+function applyQConjToVec(
+  q: { x: number; y: number; z: number; w: number },
+  v: [number, number, number]
+): [number, number, number] {
+  const { x: qx, y: qy, z: qz, w: qw } = { x: -q.x, y: -q.y, z: -q.z, w: q.w };
+  const [vx, vy, vz] = v;
+  const tx = 2 * (qy * vz - qz * vy);
+  const ty = 2 * (qz * vx - qx * vz);
+  const tz = 2 * (qx * vy - qy * vx);
+  return [
+    vx + qw * tx + qy * tz - qz * ty,
+    vy + qw * ty + qz * tx - qx * tz,
+    vz + qw * tz + qx * ty - qy * tx,
+  ];
+}
 
 function formatGzTime(time: GzTimeData | null): string {
   if (!time) {
@@ -78,6 +94,7 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
   const sceneElementRef = useRef<HTMLDivElement | null>(null);
   const sceneMgrRef = useRef<SceneManager | null>(null);
   const statsTopicNameRef = useRef<string | null>(null);
+  const axesRef = useRef<SVGSVGElement | null>(null);
 
   const [simRunning, setSimRunning] = useState(false);
   const [isOrtho, setIsOrtho] = useState(false);
@@ -91,8 +108,6 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
     realTime: null,
     realtimeFactor: 0,
     iterations: 0,
-    fps: 0,
-    contacts: 0,
   });
 
   // Connect / reconnect SceneManager whenever the WebSocket URL changes
@@ -145,7 +160,6 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
                     realTime: msg.real_time ?? null,
                     realtimeFactor: msg.real_time_factor ?? 0,
                     iterations: msg.iterations ?? 0,
-                    contacts: 0,
                   }));
                 });
                 (sceneMgr as any).subscribeToTopic(statsTopic);
@@ -172,30 +186,58 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
     };
   }, [websocketUrl]);
 
-  // FPS counter — counts RAF frames, updates display once per second
+  // Live axes orientation gizmo — reads camera quaternion per frame, updates SVG via DOM refs
   useEffect(() => {
-    let frameCount = 0;
-    let lastTime = performance.now();
+    const CX = 28, CY = 52, SCALE = 28, LABEL_GAP = 9;
+    const AXIS_DEFS: { id: string; vec: [number, number, number] }[] = [
+      { id: 'x', vec: [1, 0, 0] },
+      { id: 'y', vec: [0, 1, 0] },
+      { id: 'z', vec: [0, 0, 1] },
+    ];
+
     let rafId: number;
-
     const tick = () => {
-      frameCount++;
       rafId = requestAnimationFrame(tick);
+      const svg = axesRef.current;
+      if (!svg) { return; }
+      const q = (sceneMgrRef.current as any)?.scene?.camera?.quaternion;
+      if (!q) { return; }
+
+      const projected = AXIS_DEFS.map(({ id, vec }) => {
+        const [rx, ry, rz] = applyQConjToVec(q, vec);
+        return { id, tx: CX + rx * SCALE, ty: CY - ry * SCALE, z: rz };
+      });
+
+      projected.sort((a, b) => a.z - b.z); // back-to-front
+
+      projected.forEach(({ id, tx, ty, z }) => {
+        const opacity = z > 0 ? 1.0 : 0.3; // +z = toward viewer = bright, -z = away = dim
+        const dx = tx - CX, dy = ty - CY;
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+
+        const g = svg.querySelector(`[data-axis="${id}"]`) as SVGGElement | null;
+        if (!g) { return; }
+
+        const line = g.querySelector('line') as SVGLineElement | null;
+        if (line) {
+          line.setAttribute('x2', tx.toFixed(1));
+          line.setAttribute('y2', ty.toFixed(1));
+          line.style.opacity = String(opacity);
+        }
+
+        const text = g.querySelector('text') as SVGTextElement | null;
+        if (text) {
+          text.setAttribute('x', (tx + (dx / len) * LABEL_GAP).toFixed(1));
+          text.setAttribute('y', (ty + (dy / len) * LABEL_GAP + 2.5).toFixed(1));
+          text.style.opacity = String(opacity);
+        }
+
+        svg.appendChild(g); // reorder for depth sort
+      });
     };
+
     rafId = requestAnimationFrame(tick);
-
-    const interval = setInterval(() => {
-      const now = performance.now();
-      const fps = (frameCount / (now - lastTime)) * 1000;
-      setWorldStats((s) => ({ ...s, fps }));
-      frameCount = 0;
-      lastTime = now;
-    }, 1000);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      clearInterval(interval);
-    };
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
   // Resize the gzweb scene whenever the container element dimensions change
@@ -417,21 +459,21 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
         </Box>
       </Box>
 
-      {/* ── HUD: coordinate axes widget (bottom-left) ── */}
+      {/* ── HUD: coordinate axes widget (bottom-left) — updated per frame via axesRef RAF ── */}
       <Box sx={{ ...hudSx, bottom: 12, left: 12, p: 0, border: "none", background: "transparent", backdropFilter: "none" }}>
-        <svg width="80" height="56" viewBox="0 0 80 56" fill="none">
-          {/* X axis — red */}
-          <line x1="20" y1="40" x2="70" y2="40" stroke="#ef4444" strokeWidth="1.5" />
-          <polygon points="70,40 64,37 64,43" fill="#ef4444" />
-          <text x="73" y="43" fontSize="7" fill="#ef4444" fontFamily="JetBrains Mono,monospace">X</text>
-          {/* Y axis — green */}
-          <line x1="20" y1="40" x2="20" y2="8" stroke="#22c55e" strokeWidth="1.5" />
-          <polygon points="20,8 17,14 23,14" fill="#22c55e" />
-          <text x="13" y="7" fontSize="7" fill="#22c55e" fontFamily="JetBrains Mono,monospace">Y</text>
-          {/* Z axis — blue (depth, diagonal) */}
-          <line x1="20" y1="40" x2="5" y2="52" stroke="#3b82f6" strokeWidth="1.5" />
-          <polygon points="5,52 10,47 14,52" fill="#3b82f6" />
-          <text x="0" y="56" fontSize="7" fill="#3b82f6" fontFamily="JetBrains Mono,monospace">Z</text>
+        <svg ref={axesRef} width="100" height="72" viewBox="0 0 100 72" fill="none">
+          <g data-axis="x">
+            <line x1="28" y1="52" x2="56" y2="52" stroke="#ef4444" strokeWidth="1.8" />
+            <text x="59" y="55" fontSize="9" fill="#ef4444" fontFamily="JetBrains Mono,monospace">X</text>
+          </g>
+          <g data-axis="y">
+            <line x1="28" y1="52" x2="28" y2="24" stroke="#22c55e" strokeWidth="1.8" />
+            <text x="20" y="20" fontSize="9" fill="#22c55e" fontFamily="JetBrains Mono,monospace">Y</text>
+          </g>
+          <g data-axis="z">
+            <line x1="28" y1="52" x2="10" y2="64" stroke="#3b82f6" strokeWidth="1.8" />
+            <text x="2" y="68" fontSize="9" fill="#3b82f6" fontFamily="JetBrains Mono,monospace">Z</text>
+          </g>
         </svg>
       </Box>
 
@@ -507,28 +549,17 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
         </Tooltip>
       </Box>
 
-      {/* ── HUD: world control / sim stats (bottom-right) ── */}
+      {/* ── HUD: sim stats (bottom-right) ── */}
       <Box sx={{ ...hudSx, bottom: 12, right: 12, minWidth: 168 }}>
-        <Box sx={{ fontSize: 7, color: "#6e7681", letterSpacing: ".8px", mb: "5px" }}>
-          WORLD CONTROL
-        </Box>
-        {/* Status row */}
-        <Box sx={{ color: "#22d3ee", mb: "4px" }}>
+        {/* Status */}
+        <Box sx={{ color: "#22d3ee", mb: "5px", textAlign: "center" }}>
           ▶ {worldStats.simTime ? "SIM RUNNING" : "CONNECTING…"}
         </Box>
-        {/* ITER + FPS */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2, mb: "2px" }}>
-          <Box>
-            <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>ITER</Box>
-            <Box component="span" sx={{ color: "#fb923c", fontWeight: 700 }}>
-              {worldStats.iterations > 0 ? worldStats.iterations.toLocaleString() : "--"}
-            </Box>
-          </Box>
-          <Box>
-            <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>FPS</Box>
-            <Box component="span" sx={{ color: "#a78bfa", fontWeight: 700 }}>
-              {worldStats.fps > 0 ? worldStats.fps.toFixed(1) : "--"}
-            </Box>
+        {/* ITER */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: "2px" }}>
+          <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>ITER</Box>
+          <Box component="span" sx={{ color: "#fb923c", fontWeight: 700 }}>
+            {worldStats.iterations > 0 ? worldStats.iterations.toLocaleString() : "--"}
           </Box>
         </Box>
         {/* SIM TIME */}
@@ -541,19 +572,11 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
           <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>REAL</Box>
           <Box component="span" sx={{ color: "#c9d1d9" }}>{formatGzTime(worldStats.realTime)}</Box>
         </Box>
-        {/* RTF + CONTACTS */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
-          <Box>
-            <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>RTF</Box>
-            <Box component="span" sx={{ color: worldStats.realtimeFactor > 0 ? "#22c55e" : "#6e7681", fontWeight: 700 }}>
-              {worldStats.realtimeFactor > 0 ? worldStats.realtimeFactor.toFixed(3) : "--"}
-            </Box>
-          </Box>
-          <Box>
-            <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>CONTACTS</Box>
-            <Box component="span" sx={{ color: "#fb923c", fontWeight: 700 }}>
-              {worldStats.contacts}
-            </Box>
+        {/* RTF */}
+        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>RTF</Box>
+          <Box component="span" sx={{ color: worldStats.realtimeFactor > 0 ? "#22c55e" : "#6e7681", fontWeight: 700 }}>
+            {worldStats.realtimeFactor > 0 ? worldStats.realtimeFactor.toFixed(3) : "--"}
           </Box>
         </Box>
       </Box>

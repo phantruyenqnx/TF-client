@@ -2086,6 +2086,20 @@ export class Scene {
         allChildren[i].parent!.remove(allChildren[i]);
       }
     }
+
+    // ColladaLoader marks diffuse textures as LinearEncoding, but they are
+    // sRGB assets. With outputEncoding=sRGBEncoding the renderer would
+    // double-gamma them, causing washed-out colors. Correct here.
+    dae.traverse((child: any) => {
+      if (!child.isMesh) { return; }
+      const mats: THREE.Material[] = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+      mats.forEach((mat: any) => {
+        if (mat.map)         { mat.map.encoding         = THREE.sRGBEncoding; mat.map.needsUpdate         = true; }
+        if (mat.emissiveMap) { mat.emissiveMap.encoding = THREE.sRGBEncoding; mat.emissiveMap.needsUpdate = true; }
+      });
+    });
   }
 
   /**
