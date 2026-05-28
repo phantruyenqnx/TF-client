@@ -1825,7 +1825,6 @@ export class Scene {
         const diffuseUri = createFuelUri(textures[t].diffuse);
         texturesLoaded[t] = this.loadTexture(diffuseUri);
         texturesLoaded[t].encoding = THREE.sRGBEncoding;
-        texturesLoaded[t].needsUpdate = true;
         configTexture(texturesLoaded[t], new THREE.Vector2(
           width/textures[t].size, height/textures[t].size)
         );
@@ -2378,7 +2377,6 @@ export class Scene {
             // Color textures are sRGB files; mark so the GPU decodes them to
             // linear before lighting when outputEncoding=sRGBEncoding is set.
             albedoMap.encoding = THREE.sRGBEncoding;
-            albedoMap.needsUpdate = true;
             (obj.material as any).map = albedoMap;
             maps.push(albedoMap);
 
@@ -2398,7 +2396,6 @@ export class Scene {
           if (material.pbr.emissiveMap) {
             let emissiveMap = this.loadTexture(material.pbr.emissiveMap);
             emissiveMap.encoding = THREE.sRGBEncoding;
-            emissiveMap.needsUpdate = true;
             (obj.material as any).emissiveMap = emissiveMap;
             maps.push(emissiveMap);
           }
@@ -2444,7 +2441,6 @@ export class Scene {
           {
             let texture = this.loadTexture(material.texture);
             texture.encoding = THREE.sRGBEncoding;
-            texture.needsUpdate = true;
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.x = 1.0;
             texture.repeat.y = 1.0;
@@ -3986,8 +3982,8 @@ export class Scene {
           imageElem.src += window.btoa(binary);
 
           texture.format = THREE.RGBAFormat;
-          texture.needsUpdate = true;
           texture.image = imageElem;
+          texture.needsUpdate = true;
 
           // Mark the texture as done in the loading manager.
           const manager = this.textureLoader.manager as WsLoadingManager;

@@ -1390,7 +1390,29 @@ export class SDFParser {
       });
     }
 
+    if (sdfObj.model.joint) {
+      if (!(sdfObj.model.joint instanceof Array))
+        sdfObj.model.joint = [sdfObj.model.joint];
+
+      modelObj.userData.joints = sdfObj.model.joint.map((j: any) => ({
+        name:   j['@name'] || j.name,
+        type:   this.parseJointType(j['@type'] || j.type || 'fixed'),
+        parent: j.parent,
+        child:  j.child,
+        axis:   j.axis ? { xyz: this.parse3DVector(j.axis.xyz || '0 0 1') } : undefined,
+        pose:   j.pose ? this.parsePose(j.pose) : new Pose(),
+      }));
+    }
+
     return modelObj;
+  }
+
+  private parseJointType(s: string): number {
+    const m: Record<string, number> = {
+      revolute: 1, revolute2: 2, prismatic: 3, universal: 4,
+      ball: 5, screw: 6, gearbox: 7, fixed: 8, continuous: 1,
+    };
+    return m[s.toLowerCase()] ?? 8;
   }
 
   /**
