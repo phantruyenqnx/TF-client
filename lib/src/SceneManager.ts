@@ -559,6 +559,30 @@ export class SceneManager {
       }
     );
     this.transport.subscribe(sceneTopic);
+
+    // Subscribe to the 'scene/deletion' topic to remove deleted entities.
+    const deletionTopic = new Topic(
+      `/world/${this.transport.getWorld()}/scene/deletion`,
+      (msg) => {
+        if (!msg || !msg['data']) {
+          return;
+        }
+
+        msg['data'].forEach((id: number) => {
+          const idx = this.models.findIndex((m: any) => m['id'] === id);
+          if (idx < 0) {
+            return;
+          }
+          const model = this.models[idx];
+          const entity = this.scene.getByName(model['gz3dName']);
+          if (entity) {
+            this.scene.remove(entity);
+          }
+          this.models.splice(idx, 1);
+        });
+      }
+    );
+    this.transport.subscribe(deletionTopic);
   }
 
   /**
