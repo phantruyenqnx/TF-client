@@ -34,8 +34,22 @@ declare module "gzweb" {
     select(name: string): void;
     follow(name: string | null): void;
     moveTo(name: string): void;
+    thirdPersonFollow(name: string): void;
+    firstPerson(name: string): void;
     getConnectionStatusAsObservable(): Observable<boolean>;
+    getConnectionStatus(): string;
+    getModels(): unknown[];
     subscribeToTopic(topic: Topic): void;
     unsubscribeFromTopic(name: string): void;
+    subscribeToCameraFeed(topic: string, onFrame: (pngBytes: Uint8Array) => void): void;
+    play(): void;
+    pause(): void;
+    step(steps?: number): void;
+    reset(): void;
+    stop(): void;
+    spawnModel(sdfString: string, pose?: { x: number; y: number; z: number }): void;
+    spawnModelByUri(uri: string, name: string): void;
+    removeModel(name: string): void;
+    publish(): void;
   }
 }

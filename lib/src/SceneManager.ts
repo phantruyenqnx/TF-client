@@ -464,7 +464,7 @@ export class SceneManager {
 
   /**
    * Subscribe to a camera image topic.
-   * Transport detects ignition.msgs.Image and delivers raw PNG bytes directly.
+   * Transport detects gz.msgs.Image and delivers raw PNG bytes directly.
    *
    * @param topic The camera image topic name.
    * @param onFrame Called with PNG bytes for each frame.
@@ -485,7 +485,7 @@ export class SceneManager {
   public play(): void {
     this.transport.requestService(
       `/world/${this.transport.getWorld()}/control`,
-      'ignition.msgs.WorldControl',
+      'gz.msgs.WorldControl',
       {pause: false}
     );
   }
@@ -496,7 +496,7 @@ export class SceneManager {
   public pause(): void {
     this.transport.requestService(
       `/world/${this.transport.getWorld()}/control`,
-      'ignition.msgs.WorldControl',
+      'gz.msgs.WorldControl',
       {pause: true}
     );
   }
@@ -507,7 +507,7 @@ export class SceneManager {
   public step(steps: number = 1): void {
     this.transport.requestService(
       `/world/${this.transport.getWorld()}/control`,
-      'ignition.msgs.WorldControl',
+      'gz.msgs.WorldControl',
       { multi_step: steps }
     );
   }
@@ -518,7 +518,7 @@ export class SceneManager {
   public reset(): void {
     this.transport.requestService(
       `/world/${this.transport.getWorld()}/control`,
-      'ignition.msgs.WorldControl',
+      'gz.msgs.WorldControl',
       { reset: { all: true } }
     );
   }
@@ -529,7 +529,7 @@ export class SceneManager {
   public stop(): void {
     this.transport.requestService(
       '/server_control',
-      'ignition.msgs.ServerControl',
+      'gz.msgs.ServerControl',
       {stop: true}
     );
   }
@@ -540,7 +540,7 @@ export class SceneManager {
   public spawnModel(sdfString: string, pose?: {x: number; y: number; z: number}): void {
     this.transport.requestService(
       `/world/${this.transport.getWorld()}/create`,
-      'ignition.msgs.EntityFactory',
+      'gz.msgs.EntityFactory',
       { sdf: sdfString, ...(pose ? { pose: { position: pose } } : {}) }
     );
   }
@@ -551,7 +551,7 @@ export class SceneManager {
   public spawnModelByUri(uri: string, name: string): void {
     this.transport.requestService(
       `/world/${this.transport.getWorld()}/create`,
-      'ignition.msgs.EntityFactory',
+      'gz.msgs.EntityFactory',
       { sdf_filename: uri, name }
     );
   }
@@ -562,7 +562,7 @@ export class SceneManager {
   public removeModel(name: string): void {
     this.transport.requestService(
       `/world/${this.transport.getWorld()}/remove`,
-      'ignition.msgs.Entity',
+      'gz.msgs.Entity',
       { name, type: 2 }
     );
   }

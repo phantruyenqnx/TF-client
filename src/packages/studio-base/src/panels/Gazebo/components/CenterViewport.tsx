@@ -119,6 +119,9 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
               if (worldName) {
                 const statsTopicName = `/world/${worldName}/stats`;
                 const statsTopic = new Topic(statsTopicName, (msg: any) => {
+                  if (msg.paused !== undefined) {
+                    setSimRunning(!msg.paused);
+                  }
                   setWorldStats({
                     simTime: msg.sim_time ?? null,
                     realTime: msg.real_time ?? null,
@@ -396,7 +399,11 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
         <Tooltip title={simRunning ? "Pause (Space)" : "Play (Space)"} placement="top" arrow>
           <Box
             component="button"
-            onClick={() => { setSimRunning((v) => !v); }}
+            onClick={() => {
+              const mgr = sceneMgrRef.current;
+              if (!mgr) { return; }
+              if (simRunning) { mgr.pause(); } else { mgr.play(); }
+            }}
             sx={{
               width: 36, height: 28, border: "none", borderRadius: "4px",
               background: simRunning
