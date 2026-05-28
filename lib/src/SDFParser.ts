@@ -1188,6 +1188,12 @@ export class SDFParser {
       this.scene.setPose(sensorObj, sensorPose.position, sensorPose.orientation);
     }
 
+    const sensorType: string = sensor['@type'] || sensor['type'] || '';
+    sensorObj.userData.sensor = {
+      name: sensorObj.name,
+      type: sensorType,
+      ...(sensorType && sensor[sensorType] ? { config: sensor[sensorType] } : {}),
+    };
     return sensorObj;
   }
 
