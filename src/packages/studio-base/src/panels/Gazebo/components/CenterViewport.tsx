@@ -423,6 +423,7 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
         <Tooltip title="Step Forward" placement="top" arrow>
           <Box
             component="button"
+            onClick={() => { sceneMgrRef.current?.step(1); }}
             sx={{
               width: 32, height: 28, border: "none", borderRadius: "4px",
               background: "rgba(255,255,255,.06)", color: "#8b949e",
@@ -438,6 +439,7 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
         <Tooltip title="Reset World" placement="top" arrow>
           <Box
             component="button"
+            onClick={() => { sceneMgrRef.current?.reset(); }}
             sx={{
               width: 32, height: 28, border: "none", borderRadius: "4px",
               background: "rgba(255,255,255,.06)", color: "#8b949e",
