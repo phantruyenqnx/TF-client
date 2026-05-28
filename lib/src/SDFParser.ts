@@ -449,6 +449,9 @@ export class SDFParser {
     material.opacity = srcMaterial.opacity;
     material.normalMap = srcMaterial.normalMap;
     material.scale = srcMaterial.scale;
+    material.doubleSided = srcMaterial.double_sided === true ||
+                           srcMaterial.double_sided === 'true' ||
+                           srcMaterial.double_sided === 1;
 
     // normal map
     if (srcMaterial.normal_map)

@@ -2495,6 +2495,10 @@ export class Scene {
             obj.material.opacity = opacity;
           }
         }
+
+        if (material.doubleSided) {
+          obj.material.side = THREE.DoubleSide;
+        }
       }
     }
   }
