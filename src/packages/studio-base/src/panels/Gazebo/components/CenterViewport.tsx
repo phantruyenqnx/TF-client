@@ -124,14 +124,14 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
                   if (msg.paused !== undefined) {
                     setSimRunning(!msg.paused);
                   }
-                  setWorldStats({
+                  setWorldStats((prev) => ({
+                    ...prev,
                     simTime: msg.sim_time ?? null,
                     realTime: msg.real_time ?? null,
                     realtimeFactor: msg.real_time_factor ?? 0,
                     iterations: msg.iterations ?? 0,
-                    fps: 0,
                     contacts: 0,
-                  });
+                  }));
                 });
                 (sceneMgr as any).subscribeToTopic(statsTopic);
                 statsTopicNameRef.current = statsTopicName;
@@ -156,6 +156,32 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
       sceneMgrRef.current = null;
     };
   }, [websocketUrl]);
+
+  // FPS counter — counts RAF frames, updates display once per second
+  useEffect(() => {
+    let frameCount = 0;
+    let lastTime = performance.now();
+    let rafId: number;
+
+    const tick = () => {
+      frameCount++;
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+
+    const interval = setInterval(() => {
+      const now = performance.now();
+      const fps = (frameCount / (now - lastTime)) * 1000;
+      setWorldStats((s) => ({ ...s, fps }));
+      frameCount = 0;
+      lastTime = now;
+    }, 1000);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Resize the gzweb scene whenever the container element dimensions change
   useEffect(() => {
