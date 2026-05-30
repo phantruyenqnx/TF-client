@@ -14,7 +14,7 @@ const useStyles = makeStyles()(({ typography }) => ({
     gap: 14,
     fontFamily: typography.fontMonospace,
     fontSize: 8,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     overflow: "hidden",
     whiteSpace: "nowrap" as const,
     letterSpacing: ".4px",
@@ -23,18 +23,18 @@ const useStyles = makeStyles()(({ typography }) => ({
     width: 6,
     height: 6,
     borderRadius: "50%",
-    backgroundColor: "#22c55e",
+    backgroundColor: "var(--color-success)",
     flexShrink: 0,
     boxShadow: "0 0 4px rgba(34,197,94,.7)",
   },
   brand: {
-    color: "#c9d1d9",
+    color: "var(--color-text-primary)",
     fontWeight: 700,
     fontSize: 8,
     letterSpacing: ".5px",
   },
   sep: {
-    color: "#30363d",
+    color: "var(--color-border-default)",
     fontSize: 10,
     lineHeight: 1,
     flexShrink: 0,
@@ -42,23 +42,23 @@ const useStyles = makeStyles()(({ typography }) => ({
   badge: {
     padding: "1px 6px",
     borderRadius: 3,
-    border: "1px solid #30363d",
+    border: "1px solid var(--color-border-default)",
     fontSize: 7,
     letterSpacing: ".6px",
     flexShrink: 0,
   },
   badgeOrange: {
-    color: "#f97316",
-    borderColor: "#f97316",
-    backgroundColor: "rgba(249,115,22,.10)",
+    color: "var(--color-accent)",
+    borderColor: "var(--color-accent)",
+    backgroundColor: "var(--color-accent-muted)",
   },
   badgeCyan: {
-    color: "#22d3ee",
-    borderColor: "#22d3ee",
-    backgroundColor: "rgba(34,211,238,.08)",
+    color: "var(--color-info)",
+    borderColor: "var(--color-info)",
+    backgroundColor: "var(--color-info-muted)",
   },
   entity: {
-    color: "#fb923c",
+    color: "var(--color-accent)",
     fontWeight: 700,
   },
   spacer: { flex: 1 },
@@ -82,14 +82,14 @@ export function StatusBar({
       <div className={classes.dot} />
       <span className={classes.brand}>GAZEBO SIM 8.9.0</span>
       <span className={classes.sep}>│</span>
-      <span>WORLD: <span style={{ color: "#c9d1d9" }}>{worldName}</span></span>
+      <span>WORLD: <span style={{ color: "var(--color-text-primary)" }}>{worldName}</span></span>
       <span className={classes.sep}>│</span>
       <span>
         ENTITY: <span className={classes.entity}>{selectedEntity}</span>
       </span>
       <span className={classes.sep}>│</span>
       <span
-        style={{ color: connected ? "#22c55e" : "#ef4444" }}
+        style={{ color: connected ? "var(--color-success)" : "var(--color-danger)" }}
       >
         {connected ? "GZWEB ✓" : "GZWEB ✗"}
       </span>

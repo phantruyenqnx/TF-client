@@ -8,7 +8,7 @@ import { makeStyles } from "tss-react/mui";
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()(({ typography }) => ({
   toolbar: {
     display: "flex",
     alignItems: "center",
@@ -16,15 +16,15 @@ const useStyles = makeStyles()(() => ({
     padding: "0 10px",
     height: "100%",
     overflow: "hidden",
-    backgroundColor: "#161b22",
-    borderBottom: "1px solid #21262d",
-    fontFamily: "'JetBrains Mono', monospace",
+    backgroundColor: "var(--color-bg-panel)",
+    borderBottom: "1px solid var(--color-border-subtle)",
+    fontFamily: typography.fontMonospace,
     fontSize: 11,
   },
   sep: {
     width: 1,
     height: 28,
-    backgroundColor: "#30363d",
+    backgroundColor: "var(--color-border-default)",
     flexShrink: 0,
     margin: "0 4px",
   },
@@ -36,41 +36,40 @@ const useStyles = makeStyles()(() => ({
   },
   groupLabel: {
     fontSize: 7,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     letterSpacing: ".8px",
     marginRight: 1,
     whiteSpace: "nowrap" as const,
   },
-  // Base icon button
   ib: {
     width: 28,
     height: 28,
     border: "none",
     borderRadius: 4,
     background: "transparent",
-    color: "#8b949e",
+    color: "var(--color-text-secondary)",
     fontSize: 10,
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: typography.fontMonospace,
     transition: "background 0.15s, color 0.15s",
     padding: 0,
     "&:hover": {
-      background: "#1c2128",
-      color: "#c9d1d9",
+      background: "var(--color-bg-elevated)",
+      color: "var(--color-text-primary)",
     },
   },
   ibActive: {
-    background: "rgba(249,115,22,.18)",
-    color: "#f97316",
-    outline: "1px solid #f97316",
+    background: "var(--color-accent-muted)",
+    color: "var(--color-accent)",
+    outline: "1px solid var(--color-accent)",
   },
   ibDanger: {
     "&:hover": {
-      color: "#ef4444",
+      color: "var(--color-danger)",
     },
   },
 }));
@@ -295,7 +294,7 @@ export function GazeboToolbar({ focusMode, onToggleFocus }: Props): JSX.Element 
           <IB title="Translate"><IconTranslate /></IB>
           <IB title="Rotate"><IconRotate /></IB>
           <IB title="Scale"><IconScale /></IB>
-          <Box sx={{ width: 1, height: 20, bgcolor: "#30363d", mx: "2px" }} />
+          <Box sx={{ width: 1, height: 20, bgcolor: "var(--color-border-default)", mx: "2px" }} />
           <IB title="Copy">⬗</IB>
           <IB title="Paste">⬘</IB>
         </div>
@@ -309,7 +308,7 @@ export function GazeboToolbar({ focusMode, onToggleFocus }: Props): JSX.Element 
               <IB title="Spawn Box">■</IB>
               <IB title="Spawn Sphere">●</IB>
               <IB title="Spawn Cylinder">⬟</IB>
-              <Box sx={{ width: 1, height: 20, bgcolor: "#30363d", mx: "2px" }} />
+              <Box sx={{ width: 1, height: 20, bgcolor: "var(--color-border-default)", mx: "2px" }} />
               <IB title="Add Directional Light"><IconDirLight /></IB>
               <IB title="Add Point Light"><IconPointLight /></IB>
             </div>

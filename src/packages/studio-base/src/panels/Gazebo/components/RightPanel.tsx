@@ -19,12 +19,12 @@ const useStyles = makeStyles()(({ typography }) => ({
     overflow: "hidden",
     fontFamily: typography.fontMonospace,
     fontSize: 11,
-    color: "#c9d1d9",
+    color: "var(--color-text-primary)",
   },
   tabBar: {
     display: "flex",
-    backgroundColor: "#161b22",
-    borderBottom: "1px solid #21262d",
+    backgroundColor: "var(--color-bg-panel)",
+    borderBottom: "1px solid var(--color-border-subtle)",
     flexShrink: 0,
   },
   tab: {
@@ -32,7 +32,7 @@ const useStyles = makeStyles()(({ typography }) => ({
     padding: "8px 2px",
     textAlign: "center" as const,
     fontSize: 8,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     cursor: "pointer",
     letterSpacing: ".5px",
     transition: "color .15s, border-color .15s",
@@ -40,32 +40,32 @@ const useStyles = makeStyles()(({ typography }) => ({
     border: "none",
     borderBottom: "2px solid transparent",
     fontFamily: typography.fontMonospace,
-    "&:hover": { color: "#c9d1d9" },
+    "&:hover": { color: "var(--color-text-primary)" },
   },
   tabActive: {
-    color: "#f97316",
-    borderBottom: "2px solid #f97316 !important",
+    color: "var(--color-accent)",
+    borderBottom: "2px solid var(--color-accent) !important",
     fontWeight: 700,
-    backgroundColor: "#0d1117",
+    backgroundColor: "var(--color-bg-page)",
   },
   body: {
     flex: 1,
     overflowY: "auto" as const,
     padding: "10px 8px",
     "&::-webkit-scrollbar": { width: 5 },
-    "&::-webkit-scrollbar-track": { background: "#0d1117" },
-    "&::-webkit-scrollbar-thumb": { background: "#30363d", borderRadius: 3 },
+    "&::-webkit-scrollbar-track": { background: "var(--color-bg-page)" },
+    "&::-webkit-scrollbar-thumb": { background: "var(--color-border-default)", borderRadius: 3 },
   },
   sectionLabel: {
     fontSize: 7,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     letterSpacing: ".8px",
     marginBottom: 4,
     marginTop: 10,
   },
   card: {
-    backgroundColor: "#161b22",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-panel)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 4,
     padding: "8px 10px",
     marginBottom: 8,
@@ -79,21 +79,21 @@ const useStyles = makeStyles()(({ typography }) => ({
   },
   vec3Label: {
     fontSize: 8,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     letterSpacing: ".5px",
   },
   vec3Cell: {
-    backgroundColor: "#0d1117",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-page)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 3,
     padding: "3px 6px",
     fontSize: 9,
-    color: "#22d3ee",
+    color: "var(--color-info)",
     textAlign: "right" as const,
   },
   vec3Header: {
     fontSize: 7,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     textAlign: "center" as const,
   },
   // Key-value rows
@@ -102,17 +102,17 @@ const useStyles = makeStyles()(({ typography }) => ({
     justifyContent: "space-between",
     alignItems: "center",
     padding: "3px 0",
-    borderBottom: "1px solid #21262d",
+    borderBottom: "1px solid var(--color-border-subtle)",
     "&:last-child": { borderBottom: "none" },
   },
   kvKey: {
     fontSize: 8,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     letterSpacing: ".4px",
   },
   kvValue: {
     fontSize: 9,
-    color: "#c9d1d9",
+    color: "var(--color-text-primary)",
     fontWeight: 700,
   },
   // Sensor rows
@@ -122,10 +122,10 @@ const useStyles = makeStyles()(({ typography }) => ({
     alignItems: "center",
     padding: "4px 6px",
     borderRadius: 3,
-    "&:hover": { backgroundColor: "#1c2128" },
+    "&:hover": { backgroundColor: "var(--color-bg-elevated)" },
   },
-  sensorName: { fontSize: 9, color: "#c9d1d9" },
-  sensorHz: { fontSize: 8, color: "#22d3ee" },
+  sensorName: { fontSize: 9, color: "var(--color-text-primary)" },
+  sensorHz: { fontSize: 8, color: "var(--color-info)" },
   // Material swatches
   swatchRow: {
     display: "flex",
@@ -137,11 +137,11 @@ const useStyles = makeStyles()(({ typography }) => ({
     width: 16,
     height: 16,
     borderRadius: 3,
-    border: "1px solid #30363d",
+    border: "1px solid var(--color-border-default)",
     flexShrink: 0,
   },
-  swatchLabel: { fontSize: 8, color: "#6e7681" },
-  swatchValue: { fontSize: 9, color: "#c9d1d9", marginLeft: "auto" },
+  swatchLabel: { fontSize: 8, color: "var(--color-text-tertiary)" },
+  swatchValue: { fontSize: 9, color: "var(--color-text-primary)", marginLeft: "auto" },
   // Inertia matrix cells
   matrixGrid: {
     display: "grid",
@@ -150,16 +150,16 @@ const useStyles = makeStyles()(({ typography }) => ({
     marginTop: 4,
   },
   matrixCell: {
-    backgroundColor: "#0d1117",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-page)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 3,
     padding: "3px 6px",
     fontSize: 8,
-    color: "#22d3ee",
+    color: "var(--color-info)",
     textAlign: "center" as const,
   },
   matrixDiag: {
-    color: "#f97316",
+    color: "var(--color-accent)",
   },
   // Rotor slider rows
   rotorRow: {
@@ -173,16 +173,16 @@ const useStyles = makeStyles()(({ typography }) => ({
   },
   rotorLabel: {
     fontSize: 9,
-    color: "#c9d1d9",
+    color: "var(--color-text-primary)",
   },
   rotorValue: {
     fontSize: 9,
-    color: "#22d3ee",
+    color: "var(--color-info)",
     fontWeight: 700,
   },
   rotorDir: {
     fontSize: 7,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     marginLeft: 6,
   },
 }));
@@ -330,9 +330,9 @@ function LightTab(): JSX.Element {
       <div className={classes.card}>
         <div className={classes.vec3Grid}>
           <div />
-          <div style={{ fontSize: 7, color: "#6e7681", textAlign: "center" }}>X</div>
-          <div style={{ fontSize: 7, color: "#6e7681", textAlign: "center" }}>Y</div>
-          <div style={{ fontSize: 7, color: "#6e7681", textAlign: "center" }}>Z</div>
+          <div style={{ fontSize: 7, color: "var(--color-text-tertiary)", textAlign: "center" }}>X</div>
+          <div style={{ fontSize: 7, color: "var(--color-text-tertiary)", textAlign: "center" }}>Y</div>
+          <div style={{ fontSize: 7, color: "var(--color-text-tertiary)", textAlign: "center" }}>Z</div>
           <div className={classes.vec3Label}>DIR</div>
           <div className={classes.vec3Cell}>-0.500</div>
           <div className={classes.vec3Cell}>0.100</div>
@@ -395,14 +395,16 @@ function JointsTab(): JSX.Element {
                 });
               }}
               sx={{
-                color: "#f97316",
+                color: "var(--color-accent)",
                 padding: "6px 0",
                 "& .MuiSlider-thumb": {
                   width: 10,
                   height: 10,
-                  "&:hover, &.Mui-focusVisible": { boxShadow: "0 0 0 6px rgba(249,115,22,.2)" },
+                  "&:hover, &.Mui-focusVisible": {
+                    boxShadow: "0 0 0 6px color-mix(in srgb, var(--color-accent) 20%, transparent)",
+                  },
                 },
-                "& .MuiSlider-rail": { backgroundColor: "#30363d" },
+                "& .MuiSlider-rail": { backgroundColor: "var(--color-border-default)" },
               }}
             />
           </div>

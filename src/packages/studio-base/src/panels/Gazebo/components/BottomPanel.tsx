@@ -8,20 +8,20 @@ import { makeStyles } from "tss-react/mui";
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()(({ typography }) => ({
   root: {
     display: "flex",
     flexDirection: "column",
     height: "100%",
     overflow: "hidden",
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: typography.fontMonospace,
     fontSize: 11,
-    color: "#c9d1d9",
+    color: "var(--color-text-primary)",
   },
   tabBar: {
     display: "flex",
-    backgroundColor: "#161b22",
-    borderBottom: "1px solid #21262d",
+    backgroundColor: "var(--color-bg-panel)",
+    borderBottom: "1px solid var(--color-border-subtle)",
     flexShrink: 0,
     overflowX: "auto" as const,
     "&::-webkit-scrollbar": { height: 0 },
@@ -30,7 +30,7 @@ const useStyles = makeStyles()(() => ({
     flexShrink: 0,
     padding: "7px 10px",
     fontSize: 8,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     cursor: "pointer",
     letterSpacing: ".5px",
     whiteSpace: "nowrap" as const,
@@ -38,14 +38,14 @@ const useStyles = makeStyles()(() => ({
     background: "none",
     border: "none",
     borderBottom: "2px solid transparent",
-    fontFamily: "'JetBrains Mono', monospace",
-    "&:hover": { color: "#c9d1d9" },
+    fontFamily: typography.fontMonospace,
+    "&:hover": { color: "var(--color-text-primary)" },
   },
   tabActive: {
-    color: "#f97316",
-    borderBottom: "2px solid #f97316 !important",
+    color: "var(--color-accent)",
+    borderBottom: "2px solid var(--color-accent) !important",
     fontWeight: 700,
-    backgroundColor: "#0d1117",
+    backgroundColor: "var(--color-bg-page)",
   },
   body: {
     flex: 1,
@@ -57,32 +57,31 @@ const useStyles = makeStyles()(() => ({
     overflowY: "auto" as const,
     padding: "10px 12px",
     "&::-webkit-scrollbar": { width: 5 },
-    "&::-webkit-scrollbar-track": { background: "#0d1117" },
-    "&::-webkit-scrollbar-thumb": { background: "#30363d", borderRadius: 3 },
+    "&::-webkit-scrollbar-track": { background: "var(--color-bg-page)" },
+    "&::-webkit-scrollbar-thumb": { background: "var(--color-border-default)", borderRadius: 3 },
   },
-  // Plotting
   plotHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 6,
   },
-  plotTitle: { fontSize: 8, color: "#6e7681", letterSpacing: ".6px" },
+  plotTitle: { fontSize: 8, color: "var(--color-text-tertiary)", letterSpacing: ".6px" },
   plotAddBtn: {
     fontSize: 7,
-    color: "#f97316",
+    color: "var(--color-accent)",
     cursor: "pointer",
     background: "none",
-    border: "1px solid #f97316",
+    border: "1px solid var(--color-accent)",
     borderRadius: 3,
     padding: "2px 6px",
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: typography.fontMonospace,
   },
   plotCanvas: {
     width: "100%",
     height: 100,
-    backgroundColor: "#0d1117",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-page)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 4,
     display: "flex",
     alignItems: "center",
@@ -101,7 +100,7 @@ const useStyles = makeStyles()(() => ({
     alignItems: "center",
     gap: 4,
     fontSize: 7,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
   },
   plotDot: {
     width: 8,
@@ -109,12 +108,11 @@ const useStyles = makeStyles()(() => ({
     borderRadius: 1,
     flexShrink: 0,
   },
-  // Image viewer
   imageFrame: {
     width: "100%",
     height: 140,
-    backgroundColor: "#0d1117",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-page)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 4,
     display: "flex",
     alignItems: "center",
@@ -122,9 +120,8 @@ const useStyles = makeStyles()(() => ({
     flexDirection: "column" as const,
     gap: 6,
   },
-  imageIcon: { fontSize: 28, color: "#30363d" },
-  imageLabel: { fontSize: 8, color: "#6e7681", letterSpacing: ".5px" },
-  // Topic echo / viewer
+  imageIcon: { fontSize: 28, color: "var(--color-border-default)" },
+  imageLabel: { fontSize: 8, color: "var(--color-text-tertiary)", letterSpacing: ".5px" },
   topicSelector: {
     display: "flex",
     gap: 6,
@@ -133,37 +130,36 @@ const useStyles = makeStyles()(() => ({
   },
   topicSelect: {
     flex: 1,
-    backgroundColor: "#161b22",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-panel)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 3,
     padding: "4px 8px",
-    color: "#c9d1d9",
-    fontFamily: "'JetBrains Mono', monospace",
+    color: "var(--color-text-primary)",
+    fontFamily: typography.fontMonospace,
     fontSize: 8,
     outline: "none",
   },
   topicSubBtn: {
     fontSize: 7,
-    color: "#22d3ee",
+    color: "var(--color-info)",
     cursor: "pointer",
     background: "none",
-    border: "1px solid #22d3ee",
+    border: "1px solid var(--color-info)",
     borderRadius: 3,
     padding: "4px 8px",
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: typography.fontMonospace,
     flexShrink: 0,
   },
   echoBlock: {
-    backgroundColor: "#0d1117",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-page)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 4,
     padding: "8px 10px",
     fontSize: 8,
-    color: "#22c55e",
+    color: "var(--color-success)",
     lineHeight: 1.8,
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: typography.fontMonospace,
   },
-  // Log playback
   playbackHeader: {
     display: "flex",
     alignItems: "center",
@@ -174,9 +170,9 @@ const useStyles = makeStyles()(() => ({
     width: 28,
     height: 28,
     borderRadius: 4,
-    border: "1px solid #30363d",
-    background: "#161b22",
-    color: "#c9d1d9",
+    border: "1px solid var(--color-border-default)",
+    background: "var(--color-bg-panel)",
+    color: "var(--color-text-primary)",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -184,23 +180,23 @@ const useStyles = makeStyles()(() => ({
     fontSize: 12,
     flexShrink: 0,
   },
-  playbackTime: { fontSize: 9, color: "#22d3ee" },
-  playbackDur: { fontSize: 9, color: "#6e7681", marginLeft: "auto" },
-  // NavSat map
+  playbackTime: { fontSize: 9, color: "var(--color-info)" },
+  playbackDur: { fontSize: 9, color: "var(--color-text-tertiary)", marginLeft: "auto" },
   mapFrame: {
     width: "100%",
     height: 130,
-    backgroundColor: "#0d1117",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-page)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 4,
     position: "relative" as const,
     overflow: "hidden",
   },
+  // NavSat map
   mapGrid: {
     position: "absolute" as const,
     inset: 0,
     backgroundImage:
-      "linear-gradient(#21262d 1px, transparent 1px), linear-gradient(90deg, #21262d 1px, transparent 1px)",
+      "linear-gradient(var(--color-border-subtle) 1px, transparent 1px), linear-gradient(90deg, var(--color-border-subtle) 1px, transparent 1px)",
     backgroundSize: "20px 20px",
   },
   mapCoords: {
@@ -208,7 +204,7 @@ const useStyles = makeStyles()(() => ({
     bottom: 6,
     right: 8,
     fontSize: 7,
-    color: "#22d3ee",
+    color: "var(--color-info)",
     letterSpacing: ".4px",
   },
   mapMarker: {
@@ -219,16 +215,16 @@ const useStyles = makeStyles()(() => ({
     width: 10,
     height: 10,
     borderRadius: "50%",
-    backgroundColor: "#f97316",
-    border: "2px solid #fb923c",
+    backgroundColor: "var(--color-accent)",
+    border: "2px solid var(--color-accent)",
     boxShadow: "0 0 6px rgba(249,115,22,.6)",
   },
   // Point cloud
   pcFrame: {
     width: "100%",
     height: 130,
-    backgroundColor: "#0d1117",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-page)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 4,
     display: "flex",
     alignItems: "center",
@@ -242,11 +238,11 @@ const useStyles = makeStyles()(() => ({
     justifyContent: "space-between",
     alignItems: "center",
     padding: "3px 0",
-    borderBottom: "1px solid #21262d",
+    borderBottom: "1px solid var(--color-border-subtle)",
     "&:last-child": { borderBottom: "none" },
   },
-  kvKey: { fontSize: 8, color: "#6e7681" },
-  kvVal: { fontSize: 8, color: "#c9d1d9" },
+  kvKey: { fontSize: 8, color: "var(--color-text-tertiary)" },
+  kvVal: { fontSize: 8, color: "var(--color-text-primary)" },
 }));
 
 // ── Plotting SVG (stub waveform) ──────────────────────────────────────────────
@@ -254,7 +250,7 @@ const useStyles = makeStyles()(() => ({
 function PlotSVG(): JSX.Element {
   const w = 600;
   const h = 90;
-  const points = (color: string, offset: number, amp: number): string => {
+  const points = (_color: string, offset: number, amp: number): string => {
     return Array.from({ length: 61 }, (_, i) => {
       const x = (i / 60) * w;
       const y = h / 2 + Math.sin((i / 60) * Math.PI * 6 + offset) * amp

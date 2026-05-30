@@ -15,7 +15,6 @@ import type {
 
 import type { WebpackArgv } from "@tf/studio-base/WebpackArgv";
 import { makeConfig } from "@tf/studio-base/webpack";
-import * as palette from "@tf/theme/src/palette";
 
 export interface WebpackConfiguration extends Configuration {
   devServer?: WebpackDevServerConfiguration;
@@ -150,7 +149,7 @@ export const mainConfig =
         new HtmlWebpackPlugin({
           templateContent: ({ htmlWebpackPlugin }) => `
   <!doctype html>
-  <html>
+  <html data-theme="dark">
     <head>
       <meta charset="utf-8">
       <meta name="apple-mobile-web-app-capable" content="yes">
@@ -158,17 +157,12 @@ export const mainConfig =
       <style type="text/css" id="loading-styles">
         body {
           margin: 0;
+          background: #0b0d10;
         }
         #root {
           height: 100vh;
-          background-color: ${palette.light.background?.default};
-          color: ${palette.light.text?.primary};
-        }
-        @media (prefers-color-scheme: dark) {
-          #root {
-            background-color: ${palette.dark.background?.default}};
-            color: ${palette.dark.text?.primary};
-          }
+          background-color: #0b0d10;
+          color: #e6e8eb;
         }
       </style>
     </head>

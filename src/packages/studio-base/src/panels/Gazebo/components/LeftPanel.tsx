@@ -2,7 +2,6 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { Box } from "@mui/material";
 import { useState } from "react";
 import { makeStyles } from "tss-react/mui";
 
@@ -19,12 +18,12 @@ const useStyles = makeStyles()(({ typography }) => ({
     overflow: "hidden",
     fontFamily: typography.fontMonospace,
     fontSize: 11,
-    color: "#c9d1d9",
+    color: "var(--color-text-primary)",
   },
   tabBar: {
     display: "flex",
-    backgroundColor: "#161b22",
-    borderBottom: "1px solid #21262d",
+    backgroundColor: "var(--color-bg-panel)",
+    borderBottom: "1px solid var(--color-border-subtle)",
     flexShrink: 0,
   },
   tab: {
@@ -32,7 +31,7 @@ const useStyles = makeStyles()(({ typography }) => ({
     padding: "8px 4px",
     textAlign: "center" as const,
     fontSize: 9,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     cursor: "pointer",
     letterSpacing: ".6px",
     transition: "color .15s, border-color .15s",
@@ -40,78 +39,77 @@ const useStyles = makeStyles()(({ typography }) => ({
     border: "none",
     borderBottom: "2px solid transparent",
     fontFamily: typography.fontMonospace,
-    "&:hover": { color: "#c9d1d9" },
+    "&:hover": { color: "var(--color-text-primary)" },
   },
   tabActive: {
-    color: "#f97316",
-    borderBottom: "2px solid #f97316 !important",
+    color: "var(--color-accent)",
+    borderBottom: "2px solid var(--color-accent) !important",
     fontWeight: 700,
-    backgroundColor: "#0d1117",
+    backgroundColor: "var(--color-bg-page)",
   },
   body: {
     flex: 1,
     overflowY: "auto" as const,
     padding: "10px 8px",
     "&::-webkit-scrollbar": { width: 5 },
-    "&::-webkit-scrollbar-track": { background: "#0d1117" },
-    "&::-webkit-scrollbar-thumb": { background: "#30363d", borderRadius: 3 },
+    "&::-webkit-scrollbar-track": { background: "var(--color-bg-page)" },
+    "&::-webkit-scrollbar-thumb": { background: "var(--color-border-default)", borderRadius: 3 },
   },
   sectionHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     padding: "5px 8px",
-    backgroundColor: "#161b22",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-panel)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 3,
     marginBottom: 8,
     fontSize: 8,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
     letterSpacing: ".8px",
   },
   // Entity tree rows
   treeRow: {
     display: "flex",
     alignItems: "center",
-    padding: "3px 5px",
+    gap: 4,
+    padding: "3px 4px",
     borderRadius: 3,
     cursor: "pointer",
-    gap: 5,
-    color: "#c9d1d9",
-    fontSize: 10,
-    "&:hover": { backgroundColor: "#161b22" },
+    fontSize: 9,
+    color: "var(--color-text-primary)",
+    "&:hover": { backgroundColor: "var(--color-bg-panel)" },
   },
   treeRowSelected: {
-    backgroundColor: "rgba(249,115,22,.10)",
-    color: "#fb923c",
-    fontWeight: 700,
+    backgroundColor: "var(--color-bg-panel)",
+    color: "var(--color-accent)",
   },
   treeIcon: {
-    width: 12,
-    textAlign: "center" as const,
-    flexShrink: 0,
     fontSize: 9,
-    color: "#6e7681",
+    color: "var(--color-text-tertiary)",
+    width: 14,
+    textAlign: "center" as const,
   },
   treeTag: {
     marginLeft: "auto",
-    fontSize: 8,
-    color: "#6e7681",
+    fontSize: 7,
+    color: "var(--color-text-tertiary)",
+    letterSpacing: ".3px",
     whiteSpace: "nowrap" as const,
   },
   // Resource items
   resSearch: {
     width: "100%",
-    backgroundColor: "#161b22",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-panel)",
+    border: "1px solid var(--color-border-default)",
     borderRadius: 3,
     padding: "5px 8px",
-    color: "#c9d1d9",
+    color: "var(--color-text-primary)",
     fontFamily: typography.fontMonospace,
     fontSize: 9,
     marginBottom: 8,
     outline: "none",
-    "&::placeholder": { color: "#6e7681" },
+    "&::placeholder": { color: "var(--color-text-tertiary)" },
   },
   resTabs: {
     display: "flex",
@@ -123,15 +121,15 @@ const useStyles = makeStyles()(({ typography }) => ({
     fontSize: 8,
     borderRadius: 3,
     cursor: "pointer",
-    backgroundColor: "#161b22",
-    color: "#6e7681",
-    border: "1px solid #30363d",
+    backgroundColor: "var(--color-bg-panel)",
+    color: "var(--color-text-tertiary)",
+    border: "1px solid var(--color-border-default)",
     fontFamily: typography.fontMonospace,
   },
   resTabActive: {
-    backgroundColor: "rgba(249,115,22,.15)",
-    color: "#f97316",
-    borderColor: "#f97316",
+    backgroundColor: "var(--color-accent-muted)",
+    color: "var(--color-accent)",
+    borderColor: "var(--color-accent)",
   },
   resItem: {
     display: "flex",
@@ -140,23 +138,23 @@ const useStyles = makeStyles()(({ typography }) => ({
     padding: "5px 6px",
     borderRadius: 3,
     cursor: "pointer",
-    borderBottom: "1px solid #21262d",
-    "&:hover": { backgroundColor: "#161b22" },
+    borderBottom: "1px solid var(--color-border-subtle)",
+    "&:hover": { backgroundColor: "var(--color-bg-panel)" },
   },
   resIcon: {
     width: 28,
     height: 28,
-    backgroundColor: "#1c2128",
+    backgroundColor: "var(--color-bg-elevated)",
     borderRadius: 3,
-    border: "1px solid #30363d",
+    border: "1px solid var(--color-border-default)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: 14,
     flexShrink: 0,
   },
-  resName: { fontSize: 9, color: "#c9d1d9" },
-  resSub: { fontSize: 8, color: "#6e7681" },
+  resName: { fontSize: 9, color: "var(--color-text-primary)" },
+  resSub: { fontSize: 8, color: "var(--color-text-tertiary)" },
 }));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -198,7 +196,7 @@ function TreeNode({ node, depth }: TreeNodeProps): JSX.Element {
         onClick={() => { if (hasChildren) setOpen((v) => !v); }}
       >
         {/* Collapse/expand indicator */}
-        <span style={{ width: 10, flexShrink: 0, fontSize: 8, color: "#6e7681" }}>
+        <span style={{ width: 10, flexShrink: 0, fontSize: 8, color: "var(--color-text-tertiary)" }}>
           {hasChildren ? (open ? "▾" : "▸") : ""}
         </span>
         <span className={classes.treeIcon}>{NODE_ICONS[node.type]}</span>
@@ -249,7 +247,7 @@ export function LeftPanel(): JSX.Element {
           <>
             <div className={classes.sectionHeader}>
               <span>WORLD — default</span>
-              <span style={{ color: "#fb923c", cursor: "pointer", fontWeight: 700, fontSize: 9 }}>
+              <span style={{ color: "var(--color-accent)", cursor: "pointer", fontWeight: 700, fontSize: 9 }}>
                 ⋯
               </span>
             </div>

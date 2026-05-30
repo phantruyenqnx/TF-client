@@ -11,6 +11,7 @@ import "@fontsource-variable/inter";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "@tf/studio-base/styles/globals.css";
+import "@tf/studio-base/styles/theme.css";
 
 const useStyles = makeStyles()(({ palette, typography }) => ({
   root: {

@@ -59,13 +59,13 @@ function formatGzTime(time: GzTimeData | null): string {
 const hudSx = {
   position: "absolute" as const,
   padding: "8px 11px",
-  background: "rgba(10,15,25,.88)",
-  border: "1px solid #30363d",
+  background: "var(--color-bg-overlay)",
+  border: "1px solid var(--color-border-default)",
   borderRadius: "5px",
   fontSize: 9,
   backdropFilter: "blur(4px)",
-  fontFamily: "'JetBrains Mono', monospace",
-  color: "#c9d1d9",
+  fontFamily: "var(--font-mono)",
+  color: "var(--color-text-primary)",
   lineHeight: 1.6,
 };
 
@@ -269,7 +269,7 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
         width: "100%",
         height: "100%",
         overflow: "hidden",
-        bgcolor: "#030712",
+        bgcolor: "var(--color-bg-page)",
         minHeight: 0,
       }}
     >
@@ -292,9 +292,9 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
             pointerEvents: "none",
             zIndex: 1,
             "@keyframes focusRing": {
-              "0%": { boxShadow: "inset 0 0 0 2px rgba(249,115,22,0)" },
-              "35%": { boxShadow: "inset 0 0 0 2px rgba(249,115,22,.65)" },
-              "100%": { boxShadow: "inset 0 0 0 2px rgba(249,115,22,0)" },
+              "0%":   { boxShadow: "inset 0 0 0 2px rgba(77,141,245,0)" },
+              "35%":  { boxShadow: "inset 0 0 0 2px rgba(77,141,245,.65)" },
+              "100%": { boxShadow: "inset 0 0 0 2px rgba(77,141,245,0)" },
             },
             animation: "focusRing .9s ease-out forwards",
           }}
@@ -318,26 +318,25 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
           width: 34,
           height: 34,
           borderRadius: "8px",
-          border: "1px solid #30363d",
-          bgcolor: "rgba(13,17,23,.92)",
-          color: "#8b949e",
+          border: "1px solid var(--color-border-default)",
+          bgcolor: "var(--color-bg-overlay)",
+          color: "var(--color-text-secondary)",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "var(--font-mono)",
           backdropFilter: "blur(10px)",
           boxShadow: "0 4px 20px rgba(0,0,0,.6)",
-          // Animated in when focusMode = true, out when false
           opacity: focusMode ? 1 : 0,
           pointerEvents: focusMode ? "auto" : "none",
           transform: focusMode ? "scale(1) rotate(0deg)" : "scale(.5) rotate(90deg)",
           transition:
             "opacity .28s ease .15s, transform .28s cubic-bezier(.34,1.56,.64,1) .15s, color .15s ease, border-color .15s ease",
           "&:hover": {
-            color: "#f97316",
-            borderColor: "#f97316",
-            bgcolor: "rgba(249,115,22,.12)",
+            color: "var(--color-accent)",
+            borderColor: "var(--color-accent)",
+            bgcolor: "var(--color-accent-muted)",
           },
         }}
       >
@@ -351,15 +350,15 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
             width: 7,
             height: 7,
             borderRadius: "50%",
-            bgcolor: selectedEntity ? "#f97316" : "#30363d",
+            bgcolor: selectedEntity ? "var(--color-accent)" : "var(--color-border-default)",
             flexShrink: 0,
           }}
         />
         <Box>
-          <Box sx={{ color: "#fb923c", fontWeight: 700, fontSize: 10 }}>
+          <Box sx={{ color: "var(--color-accent)", fontWeight: 700, fontSize: 10 }}>
             {selectedEntity?.name ?? "—"}
           </Box>
-          <Box sx={{ color: "#6e7681", fontSize: 8 }}>
+          <Box sx={{ color: "var(--color-text-tertiary)", fontSize: 8 }}>
             {selectedEntity
               ? `model · ${selectedEntity.linkCount} links`
               : "click model to select"}
@@ -374,16 +373,16 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
           <svg width="60" height="60" viewBox="0 0 56 56" fill="none">
             <polygon
               points="28,4 52,18 52,38 28,52 4,38 4,18"
-              fill="rgba(22,27,34,.9)"
-              stroke="#30363d"
+              fill="var(--color-bg-elevated)"
+              stroke="var(--color-border-default)"
               strokeWidth="1.2"
             />
-            <line x1="28" y1="4" x2="28" y2="52" stroke="#30363d" strokeWidth=".8" />
-            <line x1="4" y1="18" x2="52" y2="38" stroke="#30363d" strokeWidth=".8" />
-            <line x1="4" y1="38" x2="52" y2="18" stroke="#30363d" strokeWidth=".8" />
-            <text x="28" y="14" textAnchor="middle" fontSize="7" fill="#6e7681" fontFamily="JetBrains Mono,monospace">TOP</text>
-            <text x="44" y="34" textAnchor="middle" fontSize="7" fill="#6e7681" fontFamily="JetBrains Mono,monospace">R</text>
-            <text x="12" y="34" textAnchor="middle" fontSize="7" fill="#6e7681" fontFamily="JetBrains Mono,monospace">L</text>
+            <line x1="28" y1="4" x2="28" y2="52" stroke="var(--color-border-default)" strokeWidth=".8" />
+            <line x1="4" y1="18" x2="52" y2="38" stroke="var(--color-border-default)" strokeWidth=".8" />
+            <line x1="4" y1="38" x2="52" y2="18" stroke="var(--color-border-default)" strokeWidth=".8" />
+            <text x="28" y="14" textAnchor="middle" fontSize="7" fill="var(--color-text-tertiary)" fontFamily="var(--font-mono)">TOP</text>
+            <text x="44" y="34" textAnchor="middle" fontSize="7" fill="var(--color-text-tertiary)" fontFamily="var(--font-mono)">R</text>
+            <text x="12" y="34" textAnchor="middle" fontSize="7" fill="var(--color-text-tertiary)" fontFamily="var(--font-mono)">L</text>
           </svg>
         </Box>
         {/* View preset buttons — row 1 */}
@@ -398,9 +397,9 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
                 onClick={() => { sceneMgrRef.current?.setCameraView(dir); }}
                 sx={{
                   flex: 1, height: 24, border: "none", borderRadius: "3px",
-                  background: "transparent", color: "#8b949e",
-                  fontSize: 7, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace",
-                  "&:hover": { background: "rgba(255,255,255,.07)", color: "#c9d1d9" },
+                  background: "transparent", color: "var(--color-text-secondary)",
+                  fontSize: 7, cursor: "pointer", fontFamily: "var(--font-mono)",
+                  "&:hover": { background: "var(--color-bg-hover)", color: "var(--color-text-primary)" },
                 }}
               >
                 {label}
@@ -413,10 +412,10 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
               onClick={() => { sceneMgrRef.current?.resetView(); }}
               sx={{
                 width: 24, height: 24, border: "none", borderRadius: "3px",
-                background: "transparent", color: "#8b949e",
+                background: "transparent", color: "var(--color-text-secondary)",
                 fontSize: 11, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                "&:hover": { background: "rgba(255,255,255,.07)", color: "#c9d1d9" },
+                "&:hover": { background: "var(--color-bg-hover)", color: "var(--color-text-primary)" },
               }}
             >
               ⌂
@@ -431,10 +430,10 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
               onClick={() => { const next = sceneMgrRef.current?.toggleOrtho() ?? false; setIsOrtho(next); }}
               sx={{
                 flex: 1, height: 24, border: "none", borderRadius: "3px",
-                background: isOrtho ? "rgba(249,115,22,.20)" : "transparent",
-                color: isOrtho ? "#f97316" : "#8b949e",
-                fontSize: 7, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace",
-                "&:hover": { background: "rgba(255,255,255,.07)", color: "#c9d1d9" },
+                background: isOrtho ? "var(--color-accent-muted)" : "transparent",
+                color: isOrtho ? "var(--color-accent)" : "var(--color-text-secondary)",
+                fontSize: 7, cursor: "pointer", fontFamily: "var(--font-mono)",
+                "&:hover": { background: "var(--color-bg-hover)", color: "var(--color-text-primary)" },
               }}
             >
               P/O
@@ -446,11 +445,11 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
               onClick={() => { const next = sceneMgrRef.current?.toggleGrid() ?? false; setGridVisible(next); }}
               sx={{
                 flex: 1, height: 24, border: "none", borderRadius: "3px",
-                background: gridVisible ? "rgba(249,115,22,.20)" : "transparent",
-                color: gridVisible ? "#f97316" : "#8b949e",
+                background: gridVisible ? "var(--color-accent-muted)" : "transparent",
+                color: gridVisible ? "var(--color-accent)" : "var(--color-text-secondary)",
                 fontSize: 9, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                "&:hover": { background: "rgba(255,255,255,.07)", color: "#c9d1d9" },
+                "&:hover": { background: "var(--color-bg-hover)", color: "var(--color-text-primary)" },
               }}
             >
               ⊞
@@ -503,12 +502,12 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
             sx={{
               width: 36, height: 28, border: "none", borderRadius: "4px",
               background: simRunning
-                ? "linear-gradient(135deg,#f97316,#fb923c)"
-                : "rgba(255,255,255,.06)",
-              color: simRunning ? "#0d1117" : "#c9d1d9",
+                ? "linear-gradient(135deg, var(--color-accent), var(--color-accent-hover))"
+                : "var(--color-bg-elevated)",
+              color: simRunning ? "var(--color-bg-page)" : "var(--color-text-primary)",
               fontSize: 11, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-mono)",
               transition: "background .15s, color .15s",
               "&:hover": { filter: "brightness(1.12)" },
             }}
@@ -522,11 +521,11 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
             onClick={() => { sceneMgrRef.current?.step(1); }}
             sx={{
               width: 32, height: 28, border: "none", borderRadius: "4px",
-              background: "rgba(255,255,255,.06)", color: "#8b949e",
+              background: "var(--color-bg-elevated)", color: "var(--color-text-secondary)",
               fontSize: 10, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: "'JetBrains Mono', monospace",
-              "&:hover": { background: "rgba(255,255,255,.10)", color: "#c9d1d9" },
+              fontFamily: "var(--font-mono)",
+              "&:hover": { background: "var(--color-bg-hover)", color: "var(--color-text-primary)" },
             }}
           >
             ▶|
@@ -538,10 +537,10 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
             onClick={() => { sceneMgrRef.current?.reset(); }}
             sx={{
               width: 32, height: 28, border: "none", borderRadius: "4px",
-              background: "rgba(255,255,255,.06)", color: "#8b949e",
+              background: "var(--color-bg-elevated)", color: "var(--color-text-secondary)",
               fontSize: 13, cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
-              "&:hover": { background: "rgba(255,255,255,.10)", color: "#c9d1d9" },
+              "&:hover": { background: "var(--color-bg-hover)", color: "var(--color-text-primary)" },
             }}
           >
             ↺
@@ -552,30 +551,30 @@ export function CenterViewport({ websocketUrl, focusMode, onExitFocus }: Props):
       {/* ── HUD: sim stats (bottom-right) ── */}
       <Box sx={{ ...hudSx, bottom: 12, right: 12, minWidth: 168 }}>
         {/* Status */}
-        <Box sx={{ color: "#22d3ee", mb: "5px", textAlign: "center" }}>
+        <Box sx={{ color: "var(--color-info)", mb: "5px", textAlign: "center" }}>
           ▶ {worldStats.simTime ? "SIM RUNNING" : "CONNECTING…"}
         </Box>
         {/* ITER */}
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: "2px" }}>
-          <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>ITER</Box>
-          <Box component="span" sx={{ color: "#fb923c", fontWeight: 700 }}>
+          <Box component="span" sx={{ fontSize: 7, color: "var(--color-text-tertiary)", mr: "4px" }}>ITER</Box>
+          <Box component="span" sx={{ color: "var(--color-accent)", fontWeight: 700 }}>
             {worldStats.iterations > 0 ? worldStats.iterations.toLocaleString() : "--"}
           </Box>
         </Box>
         {/* SIM TIME */}
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: "2px" }}>
-          <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>SIM</Box>
-          <Box component="span" sx={{ color: "#22d3ee" }}>{formatGzTime(worldStats.simTime)}</Box>
+          <Box component="span" sx={{ fontSize: 7, color: "var(--color-text-tertiary)", mr: "4px" }}>SIM</Box>
+          <Box component="span" sx={{ color: "var(--color-info)" }}>{formatGzTime(worldStats.simTime)}</Box>
         </Box>
         {/* REAL TIME */}
         <Box sx={{ display: "flex", justifyContent: "space-between", mb: "2px" }}>
-          <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>REAL</Box>
-          <Box component="span" sx={{ color: "#c9d1d9" }}>{formatGzTime(worldStats.realTime)}</Box>
+          <Box component="span" sx={{ fontSize: 7, color: "var(--color-text-tertiary)", mr: "4px" }}>REAL</Box>
+          <Box component="span" sx={{ color: "var(--color-text-primary)" }}>{formatGzTime(worldStats.realTime)}</Box>
         </Box>
         {/* RTF */}
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Box component="span" sx={{ fontSize: 7, color: "#6e7681", mr: "4px" }}>RTF</Box>
-          <Box component="span" sx={{ color: worldStats.realtimeFactor > 0 ? "#22c55e" : "#6e7681", fontWeight: 700 }}>
+          <Box component="span" sx={{ fontSize: 7, color: "var(--color-text-tertiary)", mr: "4px" }}>RTF</Box>
+          <Box component="span" sx={{ color: worldStats.realtimeFactor > 0 ? "var(--color-success)" : "var(--color-text-tertiary)", fontWeight: 700 }}>
             {worldStats.realtimeFactor > 0 ? worldStats.realtimeFactor.toFixed(3) : "--"}
           </Box>
         </Box>
