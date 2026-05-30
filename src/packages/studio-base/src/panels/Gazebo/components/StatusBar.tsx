@@ -4,7 +4,7 @@
 
 import { makeStyles } from "tss-react/mui";
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()(({ typography }) => ({
   root: {
     display: "flex",
     alignItems: "center",
@@ -12,7 +12,7 @@ const useStyles = makeStyles()(() => ({
     paddingLeft: 10,
     paddingRight: 10,
     gap: 14,
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: typography.fontMonospace,
     fontSize: 8,
     color: "#6e7681",
     overflow: "hidden",

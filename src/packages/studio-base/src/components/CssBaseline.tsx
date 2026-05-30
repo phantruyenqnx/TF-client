@@ -7,8 +7,10 @@ import { PropsWithChildren } from "react";
 import tinycolor from "tinycolor2";
 import { makeStyles } from "tss-react/mui";
 
-import "@tf/studio-base/styles/assets/inter.css";
-import "@tf/studio-base/styles/assets/plex-mono.css";
+import "@fontsource-variable/inter";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/500.css";
+import "@tf/studio-base/styles/globals.css";
 
 const useStyles = makeStyles()(({ palette, typography }) => ({
   root: {

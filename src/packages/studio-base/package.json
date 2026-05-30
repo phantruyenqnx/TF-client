@@ -169,6 +169,8 @@
     "zustand": "4.4.1"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.0.0",
+    "@fontsource/jetbrains-mono": "^5.0.0",
     "@tf/sql.js": "npm:@foxglove/sql.js@0.0.4",
     "gzweb": "file:../../../lib",
     "three-nebula": "10.0.3"

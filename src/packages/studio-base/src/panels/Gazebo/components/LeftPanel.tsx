@@ -11,13 +11,13 @@ import type { EntityNode, EntityNodeType } from "../types";
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const useStyles = makeStyles()(() => ({
+const useStyles = makeStyles()(({ typography }) => ({
   root: {
     display: "flex",
     flexDirection: "column",
     height: "100%",
     overflow: "hidden",
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: typography.fontMonospace,
     fontSize: 11,
     color: "#c9d1d9",
   },
@@ -39,7 +39,7 @@ const useStyles = makeStyles()(() => ({
     background: "none",
     border: "none",
     borderBottom: "2px solid transparent",
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: typography.fontMonospace,
     "&:hover": { color: "#c9d1d9" },
   },
   tabActive: {
@@ -107,7 +107,7 @@ const useStyles = makeStyles()(() => ({
     borderRadius: 3,
     padding: "5px 8px",
     color: "#c9d1d9",
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: typography.fontMonospace,
     fontSize: 9,
     marginBottom: 8,
     outline: "none",
@@ -126,7 +126,7 @@ const useStyles = makeStyles()(() => ({
     backgroundColor: "#161b22",
     color: "#6e7681",
     border: "1px solid #30363d",
-    fontFamily: "'JetBrains Mono', monospace",
+    fontFamily: typography.fontMonospace,
   },
   resTabActive: {
     backgroundColor: "rgba(249,115,22,.15)",
