@@ -12037,7 +12037,7 @@ __metadata:
 
 "gzweb@file:../../../lib::locator=%40tf%2Fstudio-base%40workspace%3Apackages%2Fstudio-base":
   version: 2.0.14
-  resolution: "gzweb@file:../../../lib#../../../lib::hash=4f34b8&locator=%40tf%2Fstudio-base%40workspace%3Apackages%2Fstudio-base"
+  resolution: "gzweb@file:../../../lib#../../../lib::hash=27a47a&locator=%40tf%2Fstudio-base%40workspace%3Apackages%2Fstudio-base"
   dependencies:
     eventemitter2: ^6.4.5
     fast-xml-parser: ^4.1.3
