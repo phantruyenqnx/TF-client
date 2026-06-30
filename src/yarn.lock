@@ -2217,20 +2217,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fontsource-variable/inter@npm:^5.0.0":
-  version: 5.2.8
-  resolution: "@fontsource-variable/inter@npm:5.2.8"
-  checksum: 6dcd9796fbc0cbfdfe13fe8b7095e67e0b3e5b9c8ae0ce959f16561b8eae36dfafa78857bed9cfafbff9d20efa97ae4fa45c54a50ccac7de422ae22a624f607e
-  languageName: node
-  linkType: hard
-
-"@fontsource/jetbrains-mono@npm:^5.0.0":
-  version: 5.2.8
-  resolution: "@fontsource/jetbrains-mono@npm:5.2.8"
-  checksum: 26f1baa841889f78e09d4b8147cfd519a08efe0041fdf09ca98794b6b8f8bc4e496a512845de7937168aed3e69ef3040022fe53be6e96b067253473affd72d38
-  languageName: node
-  linkType: hard
-
 "@foxglove/cdr@npm:^3.0.0, @foxglove/cdr@npm:^3.2.1":
   version: 3.2.1
   resolution: "@foxglove/cdr@npm:3.2.1"
@@ -5423,8 +5409,6 @@ __metadata:
     "@emotion/react": 11.11.3
     "@emotion/styled": 11.11.0
     "@fluentui/react-icons": 2.0.224
-    "@fontsource-variable/inter": ^5.0.0
-    "@fontsource/jetbrains-mono": ^5.0.0
     "@mcap/core": 2.0.2
     "@mui/icons-material": 5.15.5
     "@mui/material": 5.15.6
@@ -5565,7 +5549,6 @@ __metadata:
     style-loader: 3.3.3
     text-metrics: 3.0.0
     three: "patch:three@0.156.1#../../patches/three.patch"
-    three-nebula: 10.0.3
     tinycolor2: 1.6.0
     ts-essentials: 9.4.0
     ts-key-enum: 2.0.12
@@ -12054,7 +12037,7 @@ __metadata:
 
 "gzweb@file:../../../lib::locator=%40tf%2Fstudio-base%40workspace%3Apackages%2Fstudio-base":
   version: 2.0.14
-  resolution: "gzweb@file:../../../lib#../../../lib::hash=27a47a&locator=%40tf%2Fstudio-base%40workspace%3Apackages%2Fstudio-base"
+  resolution: "gzweb@file:../../../lib#../../../lib::hash=4f34b8&locator=%40tf%2Fstudio-base%40workspace%3Apackages%2Fstudio-base"
   dependencies:
     eventemitter2: ^6.4.5
     fast-xml-parser: ^4.1.3
@@ -12063,7 +12046,7 @@ __metadata:
     rxjs: ^7.5.5
     three: ^0.141.0
     three-nebula: ^10.0.3
-  checksum: f4be4a8a33602384b71e0a4b091e138d8e028226af2693edeb635d7c096be8d2be84509ca7ea3092326e6a624eefa10cc3182e712bf035dc17c940131e3ceaf7
+  checksum: 3f23e66ff89cb11e98fe6f382d378ce449537062c6204e534dd44768362eaab2acc946f98d710137216872d5ccec7285abe90f9d0d04097c5b8f724b34805264
   languageName: node
   linkType: hard
 
@@ -19407,7 +19390,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"three-nebula@npm:10.0.3, three-nebula@npm:^10.0.3":
+"three-nebula@npm:^10.0.3":
   version: 10.0.3
   resolution: "three-nebula@npm:10.0.3"
   dependencies:
