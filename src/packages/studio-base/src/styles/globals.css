@@ -1,0 +1,32 @@
+:root {
+  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', Consolas, monospace;
+
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+}
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code, pre, kbd, samp, .mono {
+  font-family: var(--font-mono);
+  font-feature-settings: 'calt' 0;
+}
+
+.tabular,
+.numeric,
+td.num,
+.telemetry-value {
+  font-variant-numeric: tabular-nums;
+}

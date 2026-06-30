@@ -18,7 +18,7 @@ import {
 import AnnotationPlugin from "chartjs-plugin-annotation";
 import * as Comlink from "comlink";
 
-import PlexMono from "@tf/studio-base/styles/assets/PlexMono.woff2";
+import JetBrainsMono from "@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2";
 
 import { ChartRenderer } from "./ChartRenderer";
 
@@ -33,8 +33,8 @@ export type Service<T> = {
   init(args: InitArgs): Promise<T>;
 };
 
-// Explicitly load the "Plex Mono" font, since custom fonts from the main renderer are not inherited
-// by web workers. This is required to draw "Plex Mono" on an OffscreenCanvas, and it also appears
+// Explicitly load the "JetBrains Mono" font, since custom fonts from the main renderer are not inherited
+// by web workers. This is required to draw "JetBrains Mono" on an OffscreenCanvas, and it also appears
 // to fix a crash a large portion of Windows users were seeing where the rendering thread would
 // crash in skia code related to DirectWrite font loading when the system display scaling is set
 // >100%. For more info on this crash, see util/waitForFonts.ts.
@@ -42,7 +42,7 @@ async function loadDefaultFont(): Promise<FontFace> {
   // Passing a `url(data:...) format('woff2')` string does not work in Safari, which complains it
   // cannot load the data url due to it being cross-origin.
   // https://bugs.webkit.org/show_bug.cgi?id=265000
-  const fontFace = new FontFace("IBM Plex Mono", await (await fetch(PlexMono)).arrayBuffer());
+  const fontFace = new FontFace("JetBrains Mono", await (await fetch(JetBrainsMono)).arrayBuffer());
   if (typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope) {
     (self as unknown as WorkerGlobalScope).fonts.add(fontFace);
   } else {

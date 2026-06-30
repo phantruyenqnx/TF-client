@@ -294,14 +294,14 @@ export class SDFParser {
     let lightObj: THREE.Object3D = this.scene.createLight(
       // Protobuf light type starts at zero.
       light.type + 1,
-      light.diffuse,
+      this.parseColor(light.diffuse),
       intensity,
       light.pose,
       light.range,
       light.cast_shadows,
       light.name,
       light.direction,
-      light.specular,
+      this.parseColor(light.specular),
       light.attenuation_constant,
       light.attenuation_linear,
       light.attenuation_quadratic,
@@ -418,13 +418,21 @@ export class SDFParser {
    * @returns {object} material - material object which has the followings:
    * texture, normalMap, ambient, diffuse, specular, opacity
    */
-  public createMaterial(srcMaterial: any): Material | undefined {
+  public createMaterial(srcMaterial: any, modelBaseUrl?: string): Material | undefined {
     var texture, mat;
     let material: Material = new Material();
 
     if (!srcMaterial) {
       return undefined;
     }
+
+    // Resolve a URI that may be relative ("materials/textures/x.png") to a
+    // full model:// URI using the model's base URL. Absolute URIs pass through.
+    const resolveUri = (uri: string | undefined): string => {
+      if (!uri) return '';
+      if (uri.includes('://')) return uri;
+      return modelBaseUrl ? `${modelBaseUrl}/${uri}` : uri;
+    };
 
     if (srcMaterial.ambient) {
       material.ambient = this.parseColor(srcMaterial.ambient);
@@ -441,6 +449,9 @@ export class SDFParser {
     material.opacity = srcMaterial.opacity;
     material.normalMap = srcMaterial.normalMap;
     material.scale = srcMaterial.scale;
+    material.doubleSided = srcMaterial.double_sided === true ||
+                           srcMaterial.double_sided === 'true' ||
+                           srcMaterial.double_sided === 1;
 
     // normal map
     if (srcMaterial.normal_map)
@@ -487,42 +498,42 @@ export class SDFParser {
       material.pbr = new PBRMaterial();
       if (srcMaterial.pbr.metal) {
         // Must be SDF with metal properties.
-        material.pbr.albedoMap = srcMaterial.pbr.metal.albedo_map;
-        material.pbr.metalness = srcMaterial.pbr.metal.metalness;
-        material.pbr.metalnessMap = srcMaterial.pbr.metal.metalness_map;
-        material.pbr.normalMap = srcMaterial.pbr.metal.normal_map;
-        material.pbr.roughness = srcMaterial.pbr.metal.roughness;
-        material.pbr.roughnessMap = srcMaterial.pbr.metal.roughness_map;
-        material.pbr.emissiveMap = srcMaterial.pbr.metal.emissive_map;
-        material.pbr.lightMap = srcMaterial.pbr.metal.light_map;
-        material.pbr.environmentMap = srcMaterial.pbr.metal.environment_map;
-        material.pbr.ambientOcclusionMap = srcMaterial.pbr.metal.ambient_occlusion_map;
+        material.pbr.albedoMap          = resolveUri(srcMaterial.pbr.metal.albedo_map);
+        material.pbr.metalness          = srcMaterial.pbr.metal.metalness;
+        material.pbr.metalnessMap       = resolveUri(srcMaterial.pbr.metal.metalness_map);
+        material.pbr.normalMap          = resolveUri(srcMaterial.pbr.metal.normal_map);
+        material.pbr.roughness          = srcMaterial.pbr.metal.roughness;
+        material.pbr.roughnessMap       = resolveUri(srcMaterial.pbr.metal.roughness_map);
+        material.pbr.emissiveMap        = resolveUri(srcMaterial.pbr.metal.emissive_map);
+        material.pbr.lightMap           = resolveUri(srcMaterial.pbr.metal.light_map);
+        material.pbr.environmentMap     = resolveUri(srcMaterial.pbr.metal.environment_map);
+        material.pbr.ambientOcclusionMap = resolveUri(srcMaterial.pbr.metal.ambient_occlusion_map);
       } else if (srcMaterial.pbr.specular) {
         // Must be SDF with specular properties.
-        material.pbr.albedoMap = srcMaterial.pbr.specular.albedo_map;
-        material.pbr.specularMap = srcMaterial.pbr.specular.specular_map;
-        material.pbr.glossinessMap = srcMaterial.pbr.specular.glossiness_map;
-        material.pbr.glossiness = srcMaterial.pbr.specular.glossiness;
-        material.pbr.environmentMap = srcMaterial.pbr.specular.environment_map;
-        material.pbr.ambientOcclusionMap = srcMaterial.pbr.specular.ambient_occlusion_map;
-        material.pbr.normalMap = srcMaterial.pbr.specular.normal_map;
-        material.pbr.emissiveMap = srcMaterial.pbr.specular.emissive_map;
-        material.pbr.lightMap = srcMaterial.pbr.specular.light_map;
+        material.pbr.albedoMap          = resolveUri(srcMaterial.pbr.specular.albedo_map);
+        material.pbr.specularMap        = resolveUri(srcMaterial.pbr.specular.specular_map);
+        material.pbr.glossinessMap      = resolveUri(srcMaterial.pbr.specular.glossiness_map);
+        material.pbr.glossiness         = srcMaterial.pbr.specular.glossiness;
+        material.pbr.environmentMap     = resolveUri(srcMaterial.pbr.specular.environment_map);
+        material.pbr.ambientOcclusionMap = resolveUri(srcMaterial.pbr.specular.ambient_occlusion_map);
+        material.pbr.normalMap          = resolveUri(srcMaterial.pbr.specular.normal_map);
+        material.pbr.emissiveMap        = resolveUri(srcMaterial.pbr.specular.emissive_map);
+        material.pbr.lightMap           = resolveUri(srcMaterial.pbr.specular.light_map);
       } else {
         // Must be a protobuf message.
-        material.pbr.albedoMap = srcMaterial.pbr.albedo_map;
-        material.pbr.normalMap = srcMaterial.pbr.normal_map;
-        material.pbr.metalness = srcMaterial.pbr.metalness;
-        material.pbr.metalnessMap = srcMaterial.pbr.metalness_map;
-        material.pbr.roughness = srcMaterial.pbr.roughness;
-        material.pbr.roughnessMap = srcMaterial.pbr.roughness_map;
-        material.pbr.glossiness = srcMaterial.pbr.glossiness;
-        material.pbr.glossinessMap = srcMaterial.pbr.glossiness_map;
-        material.pbr.specularMap = srcMaterial.pbr.specular_map;
-        material.pbr.environmentMap = srcMaterial.pbr.environment_map;
-        material.pbr.emissiveMap = srcMaterial.pbr.emissive_map;
-        material.pbr.lightMap = srcMaterial.pbr.light_map;
-        material.pbr.ambientOcclusionMap = srcMaterial.pbr.ambient_occlusion_map;
+        material.pbr.albedoMap          = resolveUri(srcMaterial.pbr.albedo_map);
+        material.pbr.normalMap          = resolveUri(srcMaterial.pbr.normal_map);
+        material.pbr.metalness          = srcMaterial.pbr.metalness;
+        material.pbr.metalnessMap       = resolveUri(srcMaterial.pbr.metalness_map);
+        material.pbr.roughness          = srcMaterial.pbr.roughness;
+        material.pbr.roughnessMap       = resolveUri(srcMaterial.pbr.roughness_map);
+        material.pbr.glossiness         = srcMaterial.pbr.glossiness;
+        material.pbr.glossinessMap      = resolveUri(srcMaterial.pbr.glossiness_map);
+        material.pbr.specularMap        = resolveUri(srcMaterial.pbr.specular_map);
+        material.pbr.environmentMap     = resolveUri(srcMaterial.pbr.environment_map);
+        material.pbr.emissiveMap        = resolveUri(srcMaterial.pbr.emissive_map);
+        material.pbr.lightMap           = resolveUri(srcMaterial.pbr.light_map);
+        material.pbr.ambientOcclusionMap = resolveUri(srcMaterial.pbr.ambient_occlusion_map);
       }
     }
 
@@ -706,7 +717,15 @@ export class SDFParser {
     let size;
     let normal: THREE.Vector3 = new THREE.Vector3(0, 0, 1);
 
-    var material = this.createMaterial(mat);
+    // Extract modelBaseUrl from the mesh URI so relative PBR texture paths
+    // (e.g. "materials/textures/grass_dry.png") can be resolved to full
+    // model:// URIs (e.g. "model://grasspatch/materials/textures/grass_dry.png").
+    const meshUri: string = geom.mesh?.uri ?? '';
+    let modelBaseUrl: string = options?.modelBaseUrl ?? '';
+    if (!modelBaseUrl && meshUri.startsWith('model://')) {
+      modelBaseUrl = meshUri.split('/').slice(0, 3).join('/'); // "model://modelname"
+    }
+    var material = this.createMaterial(mat, modelBaseUrl);
 
     if (geom.box)
     {
@@ -1169,6 +1188,12 @@ export class SDFParser {
       this.scene.setPose(sensorObj, sensorPose.position, sensorPose.orientation);
     }
 
+    const sensorType: string = sensor['@type'] || sensor['type'] || '';
+    sensorObj.userData.sensor = {
+      name: sensorObj.name,
+      type: sensorType,
+      ...(sensorType && sensor[sensorType] ? { config: sensor[sensorType] } : {}),
+    };
     return sensorObj;
   }
 
@@ -1371,7 +1396,29 @@ export class SDFParser {
       });
     }
 
+    if (sdfObj.model.joint) {
+      if (!(sdfObj.model.joint instanceof Array))
+        sdfObj.model.joint = [sdfObj.model.joint];
+
+      modelObj.userData.joints = sdfObj.model.joint.map((j: any) => ({
+        name:   j['@name'] || j.name,
+        type:   this.parseJointType(j['@type'] || j.type || 'fixed'),
+        parent: j.parent,
+        child:  j.child,
+        axis:   j.axis ? { xyz: this.parse3DVector(j.axis.xyz || '0 0 1') } : undefined,
+        pose:   j.pose ? this.parsePose(j.pose) : new Pose(),
+      }));
+    }
+
     return modelObj;
+  }
+
+  private parseJointType(s: string): number {
+    const m: Record<string, number> = {
+      revolute: 1, revolute2: 2, prismatic: 3, universal: 4,
+      ball: 5, screw: 6, gearbox: 7, fixed: 8, continuous: 1,
+    };
+    return m[s.toLowerCase()] ?? 8;
   }
 
   /**
@@ -1448,6 +1495,28 @@ export class SDFParser {
       sdfObj.world.include.forEach((includedModel: any) => {
         this.includeModel(includedModel, worldObj);
       });
+    }
+
+    // Parse world <scene> sub-elements (ambient, background, fog, grid, sky)
+    if (sdfObj.world.scene) {
+      const s = sdfObj.world.scene;
+      if (s.ambient)    this.scene.setAmbient(this.parseColor(s.ambient));
+      if (s.background) this.scene.setBackground(this.parseColor(s.background));
+      if (s.fog) {
+        const c = this.parseColor(s.fog.color ?? '0.9 0.9 0.9 1');
+        this.scene.addFog(new THREE.Color(c.r, c.g, c.b).getHex(),
+                          parseFloat(s.fog.density ?? '0.001'));
+      }
+      if (s.grid !== undefined) {
+        (this.scene as any).grid.visible = this.parseBool(String(s.grid));
+      }
+      if (s.sky) this.scene.addSky();
+    }
+
+    // Parse world <wind>
+    if (sdfObj.world.wind) {
+      const vel = this.parse3DVector(sdfObj.world.wind.linear_velocity ?? '0 0 0');
+      (this.scene as any).scene.userData.wind = { velocity: vel };
     }
 
     return worldObj;
@@ -1789,8 +1858,8 @@ export class SDFParser {
 
     // Material
     const particleMaterial = extractValue('material');
-    const particleTextureUrl = particleMaterial.pbr.albedo_map;
-    const particleTexture = this.scene.loadTexture(particleTextureUrl);
+    const particleTextureUrl = particleMaterial?.pbr?.albedo_map ?? '';
+    const particleTexture = particleTextureUrl ? this.scene.loadTexture(particleTextureUrl) : null;
 
     // Create a Nebula Emitter.
     const nebulaEmitter = new Emitter();
@@ -1877,6 +1946,10 @@ export class SDFParser {
     nebulaSystem
       .addEmitter(nebulaEmitter)
       .emit({ onStart: () => {}, onUpdate: () => {}, onEnd: () => {}});
+
+    particleEmitterObj.userData.nebulaEmitter = nebulaEmitter;
+    particleEmitterObj.name = emitterName;
+    this.scene.setPose(particleEmitterObj, pose.position, pose.orientation);
 
     return particleEmitterObj;
   }

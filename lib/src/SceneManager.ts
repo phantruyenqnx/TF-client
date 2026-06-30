@@ -169,6 +169,12 @@ export class SceneManager {
   private enableLights: boolean = true;
 
   /**
+   * Called whenever the user selects or deselects a model in the 3D scene.
+   * Receives the model name, or null when deselected.
+   */
+  public onModelSelect: ((name: string | null) => void) | null = null;
+
+  /**
    * Constructor. If a url is specified, then then SceneManager will connect
    * to the specified websocket server. Otherwise, the `connect` function
    * should be called after construction.
@@ -257,6 +263,73 @@ export class SceneManager {
   public resetView(): void {
     if (this.scene) {
       this.scene.resetView();
+    }
+  }
+
+  /**
+   * Set camera to a standard orthogonal view direction.
+   * Distance is preserved relative to the current orbit target.
+   */
+  public setCameraView(direction: 'top' | 'front' | 'side'): void {
+    if (!this.scene) { return; }
+    const cam = this.scene.camera;
+    const controls = (this.scene as any).controls;
+    const target = controls ? controls.target.clone() : new THREE.Vector3();
+    const dist = cam.position.distanceTo(target) || 10;
+    switch (direction) {
+      case 'top':
+        cam.position.set(target.x, target.y, target.z + dist);
+        cam.up.set(0, 1, 0);
+        break;
+      case 'front':
+        cam.position.set(target.x + dist, target.y, target.z);
+        cam.up.set(0, 0, 1);
+        break;
+      case 'side':
+        cam.position.set(target.x, target.y + dist, target.z);
+        cam.up.set(0, 0, 1);
+        break;
+    }
+    cam.lookAt(target);
+    cam.updateMatrixWorld();
+    if (controls) { controls.update(); }
+  }
+
+  public toggleGrid(): boolean {
+    if (!this.scene) { return false; }
+    const grid = (this.scene as any).grid;
+    if (!grid) { return false; }
+    grid.visible = !grid.visible;
+    return grid.visible;
+  }
+
+  private _perspCamStore: THREE.PerspectiveCamera | null = null;
+
+  public toggleOrtho(): boolean {
+    if (!this.scene) { return false; }
+    const controls = (this.scene as any).controls;
+    if (!this._perspCamStore) {
+      const perspCam = this.scene.camera as THREE.PerspectiveCamera;
+      this._perspCamStore = perspCam;
+      const target = controls ? controls.target.clone() : new THREE.Vector3();
+      const dist = perspCam.position.distanceTo(target);
+      const halfH = dist * Math.tan(THREE.MathUtils.degToRad(perspCam.fov / 2));
+      const halfW = halfH * perspCam.aspect;
+      const orthoCam = new THREE.OrthographicCamera(
+        -halfW, halfW, halfH, -halfH, perspCam.near, perspCam.far
+      );
+      orthoCam.position.copy(perspCam.position);
+      orthoCam.quaternion.copy(perspCam.quaternion);
+      orthoCam.up.copy(perspCam.up);
+      orthoCam.updateMatrixWorld();
+      this.scene.camera = orthoCam as any;
+      if (controls) { controls.object = orthoCam; controls.update(); }
+      return true;
+    } else {
+      this.scene.camera = this._perspCamStore;
+      if (controls) { controls.object = this._perspCamStore; controls.update(); }
+      this._perspCamStore = null;
+      return false;
     }
   }
 
@@ -375,7 +448,8 @@ export class SceneManager {
         return;
       }
 
-      if ('sky' in sceneInfo && sceneInfo['sky']) {
+      const hasSky = 'sky' in sceneInfo && sceneInfo['sky'];
+      if (hasSky) {
         const sky = sceneInfo['sky'];
 
         // Check to see if a cubemap has been specified in the header.
@@ -391,6 +465,21 @@ export class SceneManager {
           this.scene.addSky();
         }
       }
+
+      // Apply background color when there is no sky. The background field is
+      // part of the Scene proto (field 4) and holds the flat background color
+      // specified in the world SDF <scene><background> tag.
+      if (!hasSky && sceneInfo['background'] !== undefined &&
+          sceneInfo['background'] !== null) {
+        const bg = sceneInfo['background'];
+        this.scene.setBackground({
+          r: bg['r'] ?? 0.7,
+          g: bg['g'] ?? 0.7,
+          b: bg['b'] ?? 0.7,
+          a: bg['a'] ?? 1,
+        });
+      }
+
       this.sceneInfo = sceneInfo;
       this.startVisualization();
 
@@ -447,12 +536,29 @@ export class SceneManager {
   }
 
   /**
+   * Subscribe to a camera image topic.
+   * Transport detects gz.msgs.Image and delivers raw PNG bytes directly.
+   *
+   * @param topic The camera image topic name.
+   * @param onFrame Called with PNG bytes for each frame.
+   */
+  public subscribeToCameraFeed(
+    topic: string,
+    onFrame: (pngBytes: Uint8Array) => void
+  ): void {
+    this.transport.subscribe(new Topic(topic, (raw: any) => {
+      if (raw instanceof Uint8Array) onFrame(raw);
+      else if (raw instanceof ArrayBuffer) onFrame(new Uint8Array(raw));
+    }));
+  }
+
+  /**
    * Play the Simulation.
    */
   public play(): void {
     this.transport.requestService(
       `/world/${this.transport.getWorld()}/control`,
-      'ignition.msgs.WorldControl',
+      'gz.msgs.WorldControl',
       {pause: false}
     );
   }
@@ -463,8 +569,30 @@ export class SceneManager {
   public pause(): void {
     this.transport.requestService(
       `/world/${this.transport.getWorld()}/control`,
-      'ignition.msgs.WorldControl',
+      'gz.msgs.WorldControl',
       {pause: true}
+    );
+  }
+
+  /**
+   * Step the simulation by a number of steps.
+   */
+  public step(steps: number = 1): void {
+    this.transport.requestService(
+      `/world/${this.transport.getWorld()}/control`,
+      'gz.msgs.WorldControl',
+      { multi_step: steps }
+    );
+  }
+
+  /**
+   * Reset the simulation.
+   */
+  public reset(): void {
+    this.transport.requestService(
+      `/world/${this.transport.getWorld()}/control`,
+      'gz.msgs.WorldControl',
+      { reset: { model_only: true, time_only: true } }
     );
   }
 
@@ -474,8 +602,41 @@ export class SceneManager {
   public stop(): void {
     this.transport.requestService(
       '/server_control',
-      'ignition.msgs.ServerControl',
+      'gz.msgs.ServerControl',
       {stop: true}
+    );
+  }
+
+  /**
+   * Spawn a model from an inline SDF string.
+   */
+  public spawnModel(sdfString: string, pose?: {x: number; y: number; z: number}): void {
+    this.transport.requestService(
+      `/world/${this.transport.getWorld()}/create`,
+      'gz.msgs.EntityFactory',
+      { sdf: sdfString, ...(pose ? { pose: { position: pose } } : {}) }
+    );
+  }
+
+  /**
+   * Spawn a model by model:// URI (server resolves the SDF).
+   */
+  public spawnModelByUri(uri: string, name: string): void {
+    this.transport.requestService(
+      `/world/${this.transport.getWorld()}/create`,
+      'gz.msgs.EntityFactory',
+      { sdf_filename: uri, name }
+    );
+  }
+
+  /**
+   * Remove a model by name.
+   */
+  public removeModel(name: string): void {
+    this.transport.requestService(
+      `/world/${this.transport.getWorld()}/remove`,
+      'gz.msgs.Entity',
+      { name, type: 2 }
     );
   }
 
@@ -543,6 +704,30 @@ export class SceneManager {
       }
     );
     this.transport.subscribe(sceneTopic);
+
+    // Subscribe to the 'scene/deletion' topic to remove deleted entities.
+    const deletionTopic = new Topic(
+      `/world/${this.transport.getWorld()}/scene/deletion`,
+      (msg) => {
+        if (!msg || !msg['data']) {
+          return;
+        }
+
+        msg['data'].forEach((id: number) => {
+          const idx = this.models.findIndex((m: any) => m['id'] === id);
+          if (idx < 0) {
+            return;
+          }
+          const model = this.models[idx];
+          const entity = this.scene.getByName(model['gz3dName']);
+          if (entity) {
+            this.scene.remove(entity);
+          }
+          this.models.splice(idx, 1);
+        });
+      }
+    );
+    this.transport.subscribe(deletionTopic);
   }
 
   /**
@@ -589,6 +774,10 @@ export class SceneManager {
     this.sceneElement.appendChild(this.scene.renderer.domElement);
 
     this.scene.setSize(this.sceneElement.clientWidth, this.sceneElement.clientHeight);
+
+    const emitter = (this.scene as any).emitter;
+    emitter.on('setTreeSelected', (name: string) => { this.onModelSelect?.(name); });
+    emitter.on('setTreeDeselected', () => { this.onModelSelect?.(null); });
   }
 
   /**

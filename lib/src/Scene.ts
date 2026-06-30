@@ -386,6 +386,11 @@ export class Scene {
     this.renderer.autoClear = false;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // sRGB output encoding: ColladaLoader marks diffuse textures as sRGBEncoding (decoded
+    // to linear before lighting); without this the re-encoding to display is skipped and
+    // those textures appear very dark. Ogre2 (Gazebo) also outputs sRGB. r141 default is
+    // LinearEncoding, so this must be set explicitly.
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
     // Particle group to render.
 
     // Add a default ambient value. This is equivalent to
@@ -484,7 +489,7 @@ export class Scene {
     // an animation loop is required with damping
     this.controls.enableDamping = false;
     this.controls.screenSpacePanning = true;
-
+    
     // Bounding Box
     var indices = new Uint16Array(
         [ 0, 1, 1, 2, 2, 3, 3, 0,
@@ -820,6 +825,15 @@ export class Scene {
     }
   }
 
+  public setAmbient(color: Color): void {
+    this.ambient.color.setRGB(color.r, color.g, color.b);
+  }
+
+  public setBackground(color: Color): void {
+    this.backgroundColor.setRGB(color.r, color.g, color.b);
+    this.scene.background = new THREE.Color(color.r, color.g, color.b);
+  }
+
   public initScene(): void {
     this.emitter.emit('show_grid', 'show');
   }
@@ -904,10 +918,11 @@ export class Scene {
       {
         if (mainPointer && model.parent === this.scene)
         {
-          //this.selectEntity(model);
+          this.selectEntity(model);
         }
       }
       // Manipulator pickers, for mouse
+      // (else kept for completeness)
       /*else if (this.modelManipulator.hovered)
       {
         this.modelManipulator.update();
@@ -919,10 +934,10 @@ export class Scene {
         // this.timeDown = new Date().getTime();
       }
     }
-    // Plane from below, for example
+    // No model hit — deselect
     else
     {
-      // this.timeDown = new Date().getTime();
+      if (mainPointer) { this.selectEntity(null); }
     }
   }
 
@@ -1810,6 +1825,7 @@ export class Scene {
       for (let t = 0; t < textures.length; ++t) {
         const diffuseUri = createFuelUri(textures[t].diffuse);
         texturesLoaded[t] = this.loadTexture(diffuseUri);
+        texturesLoaded[t].encoding = THREE.sRGBEncoding;
         configTexture(texturesLoaded[t], new THREE.Vector2(
           width/textures[t].size, height/textures[t].size)
         );
@@ -2070,6 +2086,20 @@ export class Scene {
         allChildren[i].parent!.remove(allChildren[i]);
       }
     }
+
+    // ColladaLoader marks diffuse textures as LinearEncoding, but they are
+    // sRGB assets. With outputEncoding=sRGBEncoding the renderer would
+    // double-gamma them, causing washed-out colors. Correct here.
+    dae.traverse((child: any) => {
+      if (!child.isMesh) { return; }
+      const mats: THREE.Material[] = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+      mats.forEach((mat: any) => {
+        if (mat.map)         { mat.map.encoding         = THREE.sRGBEncoding; mat.map.needsUpdate         = true; }
+        if (mat.emissiveMap) { mat.emissiveMap.encoding = THREE.sRGBEncoding; mat.emissiveMap.needsUpdate = true; }
+      });
+    });
   }
 
   /**
@@ -2359,6 +2389,9 @@ export class Scene {
 
           if (material.pbr.albedoMap) {
             let albedoMap = this.loadTexture(material.pbr.albedoMap);
+            // Color textures are sRGB files; mark so the GPU decodes them to
+            // linear before lighting when outputEncoding=sRGBEncoding is set.
+            albedoMap.encoding = THREE.sRGBEncoding;
             (obj.material as any).map = albedoMap;
             maps.push(albedoMap);
 
@@ -2370,18 +2403,21 @@ export class Scene {
 
           if (material.pbr.normalMap) {
             let normalMap = this.loadTexture(material.pbr.normalMap);
+            // Normal maps are linear data — keep LinearEncoding (default).
             (obj.material as any).normalMap = normalMap;
             maps.push(normalMap);
           }
 
           if (material.pbr.emissiveMap) {
             let emissiveMap = this.loadTexture(material.pbr.emissiveMap);
+            emissiveMap.encoding = THREE.sRGBEncoding;
             (obj.material as any).emissiveMap = emissiveMap;
             maps.push(emissiveMap);
           }
 
           if (material.pbr.roughnessMap) {
             let roughnessMap = this.loadTexture(material.pbr.roughnessMap);
+            // Roughness/metalness maps are linear data — keep LinearEncoding.
             (obj.material as any).roughnessMap = roughnessMap;
             maps.push(roughnessMap);
           }
@@ -2390,6 +2426,13 @@ export class Scene {
             let metalnessMap = this.loadTexture(material.pbr.metalnessMap);
             (obj.material as any).metalnessMap = metalnessMap;
             maps.push(metalnessMap);
+          }
+
+          if (material.pbr.metalness !== undefined) {
+            (obj.material as THREE.MeshStandardMaterial).metalness = material.pbr.metalness;
+          }
+          if (material.pbr.roughness !== undefined) {
+            (obj.material as THREE.MeshStandardMaterial).roughness = material.pbr.roughness;
           }
 
           maps.forEach(function(map) {
@@ -2412,6 +2455,7 @@ export class Scene {
           if (material.texture)
           {
             let texture = this.loadTexture(material.texture);
+            texture.encoding = THREE.sRGBEncoding;
             texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
             texture.repeat.x = 1.0;
             texture.repeat.y = 1.0;
@@ -2461,6 +2505,10 @@ export class Scene {
             obj.material.transparent = true;
             obj.material.opacity = opacity;
           }
+        }
+
+        if (material.doubleSided) {
+          obj.material.side = THREE.DoubleSide;
         }
       }
     }
@@ -2847,7 +2895,7 @@ export class Scene {
     var modelRotation = new THREE.Matrix4();
     modelRotation.extractRotation(model.matrixWorld);
     var modelInverse = new THREE.Matrix4();
-    modelInverse.getInverse(modelRotation);
+    modelInverse.copy(modelRotation).invert();
     this.boundingBox.quaternion.setFromRotationMatrix(modelInverse);
     this.boundingBox.name = 'boundingBox';
     this.boundingBox.visible = true;
@@ -3125,10 +3173,10 @@ export class Scene {
           if (model.joint[j].axis1.use_parent_model_frame)
           {
             tempMatrix.extractRotation(jointVisual.matrix);
-            tempMatrix.getInverse(tempMatrix);
+            tempMatrix.invert();
             direction.applyMatrix4(tempMatrix);
             tempMatrix.extractRotation(child.matrix);
-            tempMatrix.getInverse(tempMatrix);
+            tempMatrix.invert();
             direction.applyMatrix4(tempMatrix);
           }
 
@@ -3154,10 +3202,10 @@ export class Scene {
           if (model.joint[j].axis2.use_parent_model_frame)
           {
             tempMatrix.extractRotation(jointVisual.matrix);
-            tempMatrix.getInverse(tempMatrix);
+            tempMatrix.invert();
             direction.applyMatrix4(tempMatrix);
             tempMatrix.extractRotation(child.matrix);
-            tempMatrix.getInverse(tempMatrix);
+            tempMatrix.invert();
             direction.applyMatrix4(tempMatrix);
           }
 
@@ -3287,7 +3335,7 @@ export class Scene {
 
           // Align link with world (reverse parent rotation w.r.t. the world)
           child.setRotationFromMatrix(
-            new THREE.Matrix4().getInverse(child.parent.matrixWorld));
+            new THREE.Matrix4().copy(child.parent.matrixWorld).invert());
 
           // Get its bounding box
           box = new THREE.Box3();
@@ -3299,7 +3347,7 @@ export class Scene {
 
           // w.r.t child
           var worldToLocal = new THREE.Matrix4();
-          worldToLocal.getInverse(child.matrixWorld);
+          worldToLocal.copy(child.matrixWorld).invert();
           box.applyMatrix4(worldToLocal);
 
           // X
@@ -3948,9 +3996,9 @@ export class Scene {
             'data:image/png;base64,';
           imageElem.src += window.btoa(binary);
 
-          texture.format = isJPEG ? THREE.RGBFormat : THREE.RGBAFormat;
-          texture.needsUpdate = true;
+          texture.format = THREE.RGBAFormat;
           texture.image = imageElem;
+          texture.needsUpdate = true;
 
           // Mark the texture as done in the loading manager.
           const manager = this.textureLoader.manager as WsLoadingManager;

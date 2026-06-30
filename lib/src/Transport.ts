@@ -176,9 +176,9 @@ export class Transport {
   public subscribe(topic: Topic): void {
     this.topicMap.set(topic.name, topic);
 
-    const publisher = this.availableTopics.filter(pub => pub['topic'] === topic.name)[0];
-    if (publisher['msg_type'] === 'ignition.msgs.Image' ||
-        publisher['msg_type'] === 'gazebo.msgs.Image') {
+    const publisher: any = this.availableTopics.filter((pub: any) => pub['topic'] === topic.name)[0];
+    if (publisher?.['msg_type'] === 'ignition.msgs.Image' ||
+        publisher?.['msg_type'] === 'gazebo.msgs.Image') {
       this.sendMessage(['image', topic.name, '', '']);
     }
     else {
@@ -435,7 +435,12 @@ export class Transport {
         msg = msgData;
       }
       else {
-        msg = msgType.decode(msgData);
+        if (!msgType) {
+          console.warn(`[Transport] Unknown message type in frame: ${frameParts[2]}`);
+          return;
+        }
+        msg = this.decodeWithStubInjection(msgType, msgData);
+        if (msg === null) return;
       }
 
       // For frame format information see the WebsocketServer documentation at:
@@ -538,5 +543,59 @@ export class Transport {
    */
   private buildMsg(parts: string[]): string {
     return parts.join(',');
+  }
+
+  /**
+   * Decode a protobuf message, automatically injecting stub definitions for any
+   * referenced type that the server's protos frame omitted (e.g. PixelFormatType).
+   * Retries up to 10 times so every missing dependency can be resolved in turn.
+   * Returns null and logs a warning if decode cannot succeed.
+   */
+  private decodeWithStubInjection(msgType: Type, msgData: Uint8Array): any {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        return msgType.decode(msgData);
+      } catch (e: any) {
+        const match = e?.message?.match(/no such Type or Enum '\.?([\w.]+)'/);
+        if (!match) {
+          console.error('[Transport] Proto decode error:', e?.message);
+          return null;
+        }
+        if (!this.injectProtoStub(match[1])) {
+          return null;
+        }
+      }
+    }
+    console.error('[Transport] Proto decode failed after max stub-injection retries');
+    return null;
+  }
+
+  /**
+   * Inject a minimal stub definition for a missing qualified proto type name
+   * (e.g. "gz.msgs.PixelFormatType"). Tries enum first, then message, so both
+   * enum and message omissions are handled. Returns true on success.
+   */
+  private injectProtoStub(qualifiedName: string): boolean {
+    if (!this.root) return false;
+    const lastDot = qualifiedName.lastIndexOf('.');
+    const pkg  = lastDot >= 0 ? qualifiedName.slice(0, lastDot) : 'gz.msgs';
+    const name = lastDot >= 0 ? qualifiedName.slice(lastDot + 1) : qualifiedName;
+
+    const enumProto = `syntax="proto3"; package ${pkg}; enum ${name} { UNKNOWN=0; }`;
+    try {
+      parse(enumProto, this.root, { keepCase: true });
+      console.warn(`[Transport] Injected missing enum stub: ${qualifiedName}`);
+      return true;
+    } catch {
+      const msgProto = `syntax="proto3"; package ${pkg}; message ${name} {}`;
+      try {
+        parse(msgProto, this.root, { keepCase: true });
+        console.warn(`[Transport] Injected missing message stub: ${qualifiedName}`);
+        return true;
+      } catch (e) {
+        console.error(`[Transport] Cannot inject stub for ${qualifiedName}:`, e);
+        return false;
+      }
+    }
   }
 }

@@ -23,8 +23,8 @@ declare module "@mui/material/styles/createTypography" {
 // ends up crashing in DWriteFontFamily::GetFirstMatchingFont() or DWriteFont::Create().
 //
 // https://bugs.chromium.org/p/chromium/issues/detail?id=1261577
-export const fontSansSerif = "'Inter'";
-export const fontMonospace = "'IBM Plex Mono'";
+export const fontSansSerif = "'Inter Variable', 'Inter'";
+export const fontMonospace = "'JetBrains Mono'";
 
 export const fontFeatureSettings = [
   "'tnum'", // enable tabular-numerals

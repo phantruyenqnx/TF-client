@@ -9,5 +9,6 @@ export class Material {
   public specular: Color | undefined;
   public opacity: number = 1.0;
   public scale: number = 1.0;
+  public doubleSided: boolean = false;
   public pbr: PBRMaterial;
 }
